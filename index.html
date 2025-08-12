@@ -1,40 +1,181 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minecraft Enchanter</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Editor de Vídeo Ultra-Fluido (Optimizado para Gama Baja)</title>
+<style>
+  :root { font-family: Inter, system-ui, Segoe UI, Roboto, Helvetica, Arial; }
+  body { margin: 0; background: #0b0b0f; color: #e6e6e9; display: flex; gap: 18px; padding: 14px; box-sizing: border-box; min-height: 100vh; }
+  .col { display: flex; flex-direction: column; gap: 10px; }
+  .controls { width: 360px; min-width: 240px; max-height: calc(100vh - 28px); overflow: auto; padding: 14px; background: linear-gradient(180deg, #0f1220, #0b0b12); border-radius: 12px; box-shadow: 0 6px 30px rgba(0, 0, 0, 0.6); }
+  .viewer { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  label { font-size: 13px; color: #bfc4d6; }
+  input[type=range] { width: 100%; cursor: pointer; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  button, select, input[type=file] { transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease; }
+  button { padding: 8px 12px; border-radius: 8px; border: none; background: #1f2937; color: #fff; cursor: pointer; }
+  button:hover { background: #374151; box-shadow: 0 0 15px rgba(30, 41, 59, 0.7); }
+  button:disabled { background: #374151; color: #9ca3af; cursor: not-allowed; }
+  button.primary { background: #0ea5a4; }
+  button.primary:hover { background: #14b8b6; box-shadow: 0 0 15px rgba(13, 148, 136, 0.7); }
+  button.danger { background: #9f1239; }
+  button.danger:hover { background: #e11d48; box-shadow: 0 0 15px rgba(159, 18, 57, 0.7); }
+  select, input[type=file] { background: #0b0b12; color: #e6e6e9; padding: 8px; border-radius: 8px; border: 1px solid #1f2937; }
+  small { color: #9aa2b2; }
+  .status { font-size: 13px; color: #99a3b6; word-break: break-word; }
+  .canvas-wrap { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  canvas#glcanvas { background: #000; display: block; border-radius: 8px; width: 100%; height: calc(100vh - 220px); max-height: calc(100vh - 120px); object-fit: contain; image-rendering: pixelated; }
+  .hint { font-size: 12px; color: #8892a6; }
+  .seek { width: 100%; display: flex; gap: 8px; align-items: center; }
+  .time { font-size: 12px; color: #9aa2b2; min-width: 68px; text-align: right; }
+  @media (max-width: 900px) {
+    body { flex-direction: column; padding: 10px; }
+    .controls { width: 100%; max-height: none; }
+    canvas#glcanvas { height: 60vh; max-height: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="col controls" id="controlsContainer">
+    <h2>Editor Ultra-Fluido</h2>
+    <label>Archivo de vídeo (local)</label>
+    <input id="videoFile" type="file" accept="video/*" />
+    <label>Resolución de salida (Bajas para +Velocidad)</label>
+    <select id="outRes">
+      <option value="1280x720" selected>720p HD (Recomendado)</option>
+      <option value="1920x1080">1080p Full HD</option>
+      <option value="3840x2160">4K UHD (¡Extremo lag!)</option>
+      <option value="7680x4320">8K UHD (¡Imposible en gama baja!)</option>
+    </select>
+    <label>Escala / Modo</label>
+    <select id="scaleMode">
+      <option value="nearest" selected>Nearest (Máxima Velocidad)</option>
+      <option value="bilinear">Bilinear (Balanceado)</option>
+      <option value="bicubic">Bicubic + Sharpen (Máxima Calidad)</option>
+    </select>
+    <label>Filtros (Desactivados para +Velocidad)</label>
+    <div>
+      <div class="row"><label style="flex:1">Nitidez (Sharpen)</label><input id="sharpen" type="range" min="0" max="2" step="0.01" value="0" /></div>
+      <div class="row"><label style="flex:1">Contraste</label><input id="contrast" type="range" min="0" max="2" step="0.01" value="1.0" /></div>
+      <div class="row"><label style="flex:1">Saturación</label><input id="saturation" type="range" min="0" max="2" step="0.01" value="1.0" /></div>
+      <div class="row"><label style="flex:1">Brillo</label><input id="brightness" type="range" min="0" max="2" step="0.01" value="1.0" /></div>
+      <div class="row"><label style="flex:1">Reducción Ruido</label><input id="denoise" type="range" min="0" max="6" step="0.1" value="0" /></div>
+    </div>
+    <label>Controles</label>
+    <div class="row">
+      <button id="playBtn">▶ Reproducir</button>
+      <button id="pauseBtn">⏸ Pausa</button>
+      <button id="renderDownloadBtn" class="primary" disabled>⬇️ Render y Descargar</button>
+      <button id="cancelRenderBtn" class="danger" style="display:none;">❌ Cancelar</button>
+    </div>
+    <div style="margin-top:8px"><div class="status" id="status">Estado: inactivo</div></div>
+    <hr />
+    <small class="hint">Rendimiento optimizado para gama baja. Evita filtros y altas resoluciones para máxima fluidez.</small>
+  </div>
+  <div class="viewer">
+    <div style="display:flex;gap:8px;align-items:center">
+      <div style="flex:1"><label>Preview</label></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <label class="hint">FPS preview:</label><select id="previewFps"><option selected>24</option><option>30</option><option>60</option></select>
+      </div>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="glcanvas"></canvas>
+      <div class="seek">
+        <input id="seekBar" type="range" min="0" step="0.01" value="0" style="flex:1"/>
+        <div class="time"><span id="curTime">0:00</span> / <span id="durTime">0:00</span></div>
+      </div>
+      <video id="sourceVideo" crossorigin="anonymous" style="display:none"></video>
+    </div>
+  </div>
 
-        :root {
-            --panel-bg: #2a1a3e;
-            --panel-border: #a050ff;
-            --panel-border-glow: rgba(160, 80, 255, 0.6);
-            --text-color: #e5e5e5;
-            --highlight-color: #c080ff;
-            --accent-color: #ffcc00;
-            --error-color: #ff6b6b;
-            --success-color: #6bff9c;
-            --disabled-color: #555;
-            --item-bg: rgba(0, 0, 0, 0.3);
-            --enchant-bg: rgba(255, 255, 255, 0.05);
-            --enchant-border: rgba(160, 80, 255, 0.5);
-        }
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            background-color: #1e112d;
-            color: var(--text-color);
-            font-family: 'VT323', monospace;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
+<script>
+const VS=`attribute vec2 aPos;attribute vec2 aTex;varying vec2 vTex;void main(){vTex=aTex;gl_Position=vec4(aPos,0.0,1.0);}`;
+const FS=`precision lowp float;varying vec2 vTex;uniform sampler2D uTex;uniform vec2 uTexSize;uniform float uSharpen;uniform float uContrast;uniform float uSaturation;uniform float uBrightness;uniform float uDenoise;uniform int uMode;vec4 textureBicubic(sampler2D s,vec2 uv){vec2 tS=uTexSize;vec2 px=1.0/tS;vec2 f=fract(uv*tS);vec2 c=uv-(f-0.5)*px;vec4 o=vec4(0.0);for(int j=-1;j<=2;j++){for(int i=-1;i<=2;i++){vec2 off=vec2(float(i),float(j))*px;o+=texture2D(s,c+off);}}return o/16.0;}vec3 rgb2hsv(vec3 c){vec4 K=vec4(0.0,-0.333,0.667,-1.0);vec4 p=mix(vec4(c.bg,K.wz),vec4(c.gb,K.xy),step(c.b,c.g));vec4 q=mix(vec4(p.xyw,c.r),vec4(c.r,p.yzx),step(p.x,c.r));float d=q.x-min(q.w,q.y);return vec3(abs(q.z+(q.w-q.y)/(6.0*d+1e-10)),d/(q.x+1e-10),q.x);}vec3 hsv2rgb(vec3 c){vec3 rgb=clamp(abs(mod(c.x*6.0+vec3(0.0,4.0,2.0),6.0)-3.0)-1.0,0.0,1.0);return c.z*mix(vec3(1.0),rgb,c.y);}void main(){vec4 col;if(uMode==2)col=texture2D(uTex,vTex);else if(uMode==1){col=textureBicubic(uTex,vTex);}else{col=texture2D(uTex,vTex);}if(uDenoise>0.01){vec2 px=1.0/uTexSize;vec4 sum=texture2D(uTex,vTex-px)+texture2D(uTex,vTex)+texture2D(uTex,vTex+px);col=mix(col,sum/3.0,clamp(uDenoise/6.0,0.0,1.0));}if(uSharpen>0.001){vec2 px=1.0/uTexSize;vec4 blur=texture2D(uTex,vTex-px)+texture2D(uTex,vTex)+texture2D(uTex,vTex+px);vec4 mask=col-blur/3.0;col+=mask*uSharpen;}vec3 c=col.rgb;if(uBrightness!=1.0)c*=uBrightness;if(uContrast!=1.0)c=((c-0.5)*uContrast)+0.5;if(uSaturation!=1.0){vec3 hsv=rgb2hsv(c);hsv.y*=uSaturation;c=hsv2rgb(hsv);}gl_FragColor=vec4(clamp(c,0.0,1.0),col.a);}`;
+
+const canvas=document.getElementById('glcanvas'),video=document.getElementById('sourceVideo'),fileInput=document.getElementById('videoFile'),status=document.getElementById('status'),outRes=document.getElementById('outRes'),playBtn=document.getElementById('playBtn'),pauseBtn=document.getElementById('pauseBtn'),renderDownloadBtn=document.getElementById('renderDownloadBtn'),cancelRenderBtn=document.getElementById('cancelRenderBtn'),previewFps=document.getElementById('previewFps'),scaleMode=document.getElementById('scaleMode'),seekBar=document.getElementById('seekBar'),curTime=document.getElementById('curTime'),durTime=document.getElementById('durTime'),controlsContainer=document.getElementById('controlsContainer');
+let gl,program,buffers={},uniforms={},animHandle=null,originalFileName='video',isUserSeeking=false,isRendering=false,isRenderCancelled=false;
+
+function createGL(c){const gl=c.getContext('webgl',{antialias:false,powerPreference:'low-power'});if(!gl)throw new Error('Tu navegador no soporta WebGL');return gl;}
+function compileShader(gl,src,type){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){console.error('Error de Shader: '+gl.getShaderInfoLog(s));throw new Error('Error de Shader');}return s;}
+function makeProgram(gl,vsSrc,fsSrc){const p=gl.createProgram(),vs=compileShader(gl,vsSrc,gl.VERTEX_SHADER),fs=compileShader(gl,fsSrc,gl.FRAGMENT_SHADER);gl.attachShader(p,vs);gl.attachShader(p,fs);gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS)){console.error('Error de Programa: '+gl.getProgramInfoLog(p));throw new Error('Error de Programa');}return p;}
+function throttle(func,limit){let inThrottle;return function(){const args=arguments,context=this;if(!inThrottle){func.apply(context,args);inThrottle=true;setTimeout(()=>inThrottle=false,limit);}}}
+
+function initGL(width,height){canvas.width=width||640;canvas.height=height||360;if(!gl)gl=createGL(canvas);if(!program)program=makeProgram(gl,VS,FS);gl.useProgram(program);if(!buffers.vbo){const quad=new Float32Array([-1,-1,0,0,1,-1,1,0,-1,1,0,1,1,1,1,1]);buffers.vbo=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffers.vbo);gl.bufferData(gl.ARRAY_BUFFER,quad,gl.STATIC_DRAW);const aPos=gl.getAttribLocation(program,'aPos'),aTex=gl.getAttribLocation(program,'aTex');gl.enableVertexAttribArray(aPos);gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,16,0);gl.enableVertexAttribArray(aTex);gl.vertexAttribPointer(aTex,2,gl.FLOAT,false,16,8);}const tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);uniforms={uTex:gl.getUniformLocation(program,'uTex'),uTexSize:gl.getUniformLocation(program,'uTexSize'),uSharpen:gl.getUniformLocation(program,'uSharpen'),uContrast:gl.getUniformLocation(program,'uContrast'),uSaturation:gl.getUniformLocation(program,'uSaturation'),uBrightness:gl.getUniformLocation(program,'uBrightness'),uDenoise:gl.getUniformLocation(program,'uDenoise'),uMode:gl.getUniformLocation(program,'uMode')};}
+
+function updateTextureFromVideo(){if(!gl||video.readyState<video.HAVE_CURRENT_DATA)return;gl.activeTexture(gl.TEXTURE0);const tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,video);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);if(scaleMode.value==='nearest'){gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);}else{gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);}gl.uniform1i(uniforms.uTex,0);gl.uniform2f(uniforms.uTexSize,video.videoWidth,video.videoHeight);}
+
+function renderFrame(){if(video.readyState<2||!uniforms.uTex)return;updateTextureFromVideo();gl.useProgram(program);gl.uniform1f(uniforms.uSharpen,parseFloat(document.getElementById('sharpen').value));gl.uniform1f(uniforms.uContrast,parseFloat(document.getElementById('contrast').value));gl.uniform1f(uniforms.uSaturation,parseFloat(document.getElementById('saturation').value));gl.uniform1f(uniforms.uBrightness,parseFloat(document.getElementById('brightness').value));gl.uniform1f(uniforms.uDenoise,parseFloat(document.getElementById('denoise').value));let mode=0;if(scaleMode.value==='bicubic')mode=1;else if(scaleMode.value==='bilinear')mode=2;gl.uniform1i(uniforms.uMode,mode);gl.viewport(0,0,canvas.width,canvas.height);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);}
+
+function startPreviewLoop(){if(animHandle)return;const fps=parseInt(previewFps.value)||24,interval=1000/fps;let last=performance.now();function step(now){if(!isRendering&&(now-last<interval)){animHandle=requestAnimationFrame(step);return;}last=now;renderFrame();animHandle=requestAnimationFrame(step);}animHandle=requestAnimationFrame(step);}
+function stopPreviewLoop(){if(animHandle)cancelAnimationFrame(animHandle);animHandle=null;}
+
+fileInput.addEventListener('change',()=>{const f=fileInput.files&&fileInput.files[0];if(!f)return;originalFileName=f.name.substring(0,f.name.lastIndexOf('.'))||'export';video.src=URL.createObjectURL(f);video.load();video.onloadedmetadata=()=>{status.textContent=`Cargado: ${video.videoWidth}×${video.videoHeight} @ ${Math.round(video.duration)}s`;seekBar.max=video.duration;durTime.textContent=formatTime(video.duration);const[w,h]=outRes.value.split('x').map(v=>parseInt(v,10));try{initGL(w,h);}catch(e){alert('Error WebGL: '+e.message);return;}video.addEventListener('canplay',()=>renderFrame(),{once:true});renderDownloadBtn.disabled=false;};});
+
+playBtn.addEventListener('click',()=>{if(video.src){video.play();startPreviewLoop();status.textContent='Estado: reproduciendo';}else alert('Carga un archivo de vídeo primero');});
+pauseBtn.addEventListener('click',()=>{video.pause();stopPreviewLoop();status.textContent='Estado: pausa';});
+outRes.addEventListener('change',()=>{if(!video.src)return;const[w,h]=outRes.value.split('x').map(v=>parseInt(v,10));initGL(w,h);renderFrame();});
+
+seekBar.addEventListener('input',()=>{isUserSeeking=true;curTime.textContent=formatTime(parseFloat(seekBar.value||0));});
+seekBar.addEventListener('change',()=>{const t=parseFloat(seekBar.value||0);video.currentTime=t;isUserSeeking=false;renderFrame();});
+video.addEventListener('timeupdate',()=>{if(!isUserSeeking){seekBar.value=video.currentTime;curTime.textContent=formatTime(video.currentTime);}});
+video.addEventListener('seeked',()=>renderFrame());
+video.addEventListener('durationchange',()=>{seekBar.max=video.duration;durTime.textContent=formatTime(video.duration);});
+
+function formatTime(s){if(!s||isNaN(s)||s===Infinity)return'0:00';const mm=Math.floor(s/60),ss=Math.floor(s%60).toString().padStart(2,'0');return`${mm}:${ss}`;}
+
+const throttledRender=throttle(()=>{if(!isRendering)renderFrame();},100);
+['sharpen','contrast','saturation','brightness','denoise','scaleMode'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',throttledRender);});
+outRes.addEventListener('input',()=>{if(outRes.value.startsWith('3840')||outRes.value.startsWith('7680')){if(!confirm('¡ADVERTENCIA! Esta resolución causará lag extremo o puede colapsar tu navegador. ¿Continuar?'))outRes.value='1280x720';}});
+window.addEventListener('keydown',(e)=>{if(e.code==='Space'&&document.activeElement.tagName!=='BUTTON'&&!isRendering){e.preventDefault();if(video.paused)playBtn.click();else pauseBtn.click();}});
+
+function setControlsEnabled(enabled){controlsContainer.querySelectorAll('input, button, select').forEach(el=>el.disabled=!enabled);renderDownloadBtn.style.display=enabled?'inline-block':'none';cancelRenderBtn.style.display=enabled?'none':'inline-block';if(enabled){renderDownloadBtn.disabled=!video.src;cancelRenderBtn.disabled=true;}else{cancelRenderBtn.disabled=false;}}
+
+cancelRenderBtn.addEventListener('click', ()=>{if(isRendering)isRenderCancelled=true;});
+
+renderDownloadBtn.addEventListener('click',async()=>{if(!video.src||isRendering)return;if(!canvas.captureStream)return alert('Tu navegador no soporta canvas.captureStream. Usa Chrome/Edge/Firefox moderno.');
+  isRendering=true;isRenderCancelled=false;setControlsEnabled(false);stopPreviewLoop();
+  
+  const[w,h]=outRes.value.split('x').map(v=>parseInt(v,10));initGL(w,h);
+  const fps=parseInt(previewFps.value)||24;const stream=canvas.captureStream(fps);let mr;
+  try{mr=new MediaRecorder(stream,{mimeType:'video/webm;codecs=vp8,opus'});}catch(e){try{mr=new MediaRecorder(stream,{mimeType:'video/webm'});}catch(e2){alert('Error MediaRecorder: no se soportan los codecs necesarios.');isRendering=false;setControlsEnabled(true);return;}}
+  
+  let recordedChunks=[];mr.ondataavailable=ev=>{if(ev.data&&ev.data.size>0)recordedChunks.push(ev.data);};
+  mr.onstop=()=>{
+    if(isRenderCancelled){
+      status.textContent='Render cancelado por el usuario.';
+    }else{
+      const blob=new Blob(recordedChunks,{type:'video/webm'});const date=new Date();const ts=`${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,'0')}${date.getDate().toString().padStart(2,'0')}`;const newFileName=`${originalFileName}_${outRes.value}_${ts}.webm`,url=URL.createObjectURL(blob);const a=document.createElement('a');a.style.display='none';a.href=url;a.download=newFileName;document.body.appendChild(a);a.click();URL.revokeObjectURL(url);document.body.removeChild(a);
+      status.textContent='Render completado. ¡Archivo descargado!';
+    }
+    isRendering=false;isRenderCancelled=false;video.muted=false;setControlsEnabled(true);
+  };
+  
+  try{
+    status.textContent='Iniciando render...';video.pause();video.muted=true;video.currentTime=0;await new Promise(r=>setTimeout(r,100));
+    recordedChunks=[];mr.start();
+    
+    const totalFrames=Math.ceil(video.duration*fps);
+    for(let frame=0;frame<=totalFrames;frame++){
+      if(isRenderCancelled)break;
+      const time=frame/fps;
+      if(time>video.duration)break;
+      video.currentTime=time;
+      await new Promise(resolve=>video.addEventListener('seeked',resolve,{once:true}));
+      renderFrame();
+      const percent=totalFrames>0?Math.floor((frame/totalFrames)*100):0;status.textContent=`Renderizando... ${percent}%`;
+      await new Promise(r=>setTimeout(r,0));
+    }
+    mr.stop();
+  }catch(err){
+    console.error('Error durante render:',err);alert('Error durante el render: '+err.message);
+    if(mr&&mr.state==='recording')mr.stop();
+    isRendering=false;setControlsEnabled(true);status.textContent='Error en render.';
+  }});
+</script>
+</body>
+</html>            min-height: 100vh;
             padding: 30px 15px;
             font-size: 18px;
             line-height: 1.6;

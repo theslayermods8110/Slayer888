@@ -3,499 +3,404 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Editor de Vídeo Definitivo (Anti-Lag) - Mejorado</title>
+<title>Editor de Vídeo Cine 8K – G‑Flux (Render 100% Estable)</title>
 <style>
-  :root { font-family: Inter, system-ui, Segoe UI, Roboto, Helvetica, Arial; }
-  body { margin: 0; background: #0b0b0f; color: #e6e6e9; display: flex; gap: 18px; padding: 14px; box-sizing: border-box; min-height: 100vh; }
-  .col { display: flex; flex-direction: column; gap: 10px; }
-  .controls { width: 360px; min-width: 240px; max-height: calc(100vh - 28px); overflow: auto; padding: 14px; background: linear-gradient(180deg, #0f1220, #0b0b12); border-radius: 12px; box-shadow: 0 6px 30px rgba(0, 0, 0, 0.6); }
-  .viewer { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-  label { font-size: 13px; color: #bfc4d6; margin-top: 8px; }
-  input[type=range] { width: 100%; cursor: pointer; }
-  .row { display: flex; gap: 8px; align-items: center; }
-  button, select, input[type=file] { transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease; }
-  button { padding: 8px 12px; border-radius: 8px; border: none; background: #1f2937; color: #fff; cursor: pointer; }
-  button:hover { background: #374151; box-shadow: 0 0 15px rgba(30, 41, 59, 0.7); }
-  button:disabled { background: #374151; color: #9ca3af; cursor: not-allowed; }
-  button.primary { background: #0ea5a4; }
-  button.primary:hover { background: #14b8b6; box-shadow: 0 0 15px rgba(13, 148, 136, 0.7); }
-  button.danger { background: #9f1239; }
-  button.danger:hover { background: #e11d48; box-shadow: 0 0 15px rgba(159, 18, 57, 0.7); }
-  select, input[type=file] { background: #0b0b12; color: #e6e6e9; padding: 8px; border-radius: 8px; border: 1px solid #1f2937; width:100%; box-sizing: border-box; }
-  small { color: #9aa2b2; }
-  .status { font-size: 13px; color: #99a3b6; word-break: break-word; min-height:1.2em; }
-  .canvas-wrap { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-  canvas#glcanvas { background: #000; display: block; border-radius: 8px; width: 100%; height: calc(100vh - 220px); max-height: calc(100vh - 120px); object-fit: contain; image-rendering: pixelated; }
-  .hint { font-size: 12px; color: #8892a6; }
-  .seek { width: 100%; display: flex; gap: 8px; align-items: center; }
-  .time { font-size: 12px; color: #9aa2b2; min-width: 68px; text-align: right; }
-  progress { width: 100%; height: 4px; display: none; }
-  @media (max-width: 900px) { body { flex-direction: column; padding: 10px; } .controls { width: 100%; max-height: none; } canvas#glcanvas { height: 60vh; max-height: none; } }
+  :root {
+    --bg:#0b0b0f; --panel:#0f1220; --panel2:#0b0b12; --text:#e6e6e9; --muted:#bfc4d6; --line:#1f2937;
+    --pri:#0ea5a4; --pri2:#14b8b6; --sec:#4f46e5; --sec2:#6366f1; --danger:#e11d48; --danger2:#be123c;
+    --shadow: rgba(0,0,0,.7);
+    --font: Inter, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);display:flex;gap:14px;padding:14px;min-height:100vh}
+  .panel{padding:16px;background:linear-gradient(170deg,var(--panel),var(--panel2));border-radius:16px;border:1px solid var(--line);box-shadow:0 8px 40px var(--shadow);display:flex;flex-direction:column;gap:12px}
+  #controls{width:360px;min-width:300px;max-height:calc(100vh - 28px);overflow:auto}
+  #viewer{flex:1;min-width:320px;display:flex;flex-direction:column;gap:12px}
+  #export{width:380px;min-width:320px}
+  h3{margin:0 0 6px 0;font-size:18px}
+  label{font-size:13px;color:var(--muted);font-weight:600}
+  input[type=file],select{width:100%;background:#0b0b12;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px}
+  input[type=range]{width:100%;accent-color:var(--pri)}
+  .row{display:flex;gap:10px;align-items:center}
+  .grow{flex:1}
+  button{border:none;border-radius:10px;padding:10px 14px;font-weight:700;background:#1f2937;color:#fff;cursor:pointer;transition:.15s}
+  button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 24px rgba(0,0,0,.35);will-change:transform}
+  button:disabled{opacity:.6;cursor:not-allowed}
+  .primary{background:var(--pri)} .primary:hover{background:var(--pri2)}
+  .secondary{background:var(--sec)} .secondary:hover{background:var(--sec2)}
+  .danger{background:var(--danger)} .danger:hover{background:var(--danger2)}
+  .status{min-height:2.6em;display:flex;align-items:center;justify-content:center;font-size:13px;color:#9aa2b2;background:rgba(255,255,255,.04);border:1px dashed var(--line);border-radius:10px;padding:8px;text-align:center}
+  progress{width:100%;height:8px;border:none;border-radius:6px;overflow:hidden;display:none}
+  progress::-webkit-progress-bar{background:#1f2937}
+  progress::-webkit-progress-value{background:var(--pri)}
+
+  #cine-wrap{position:relative;flex:1;display:grid;place-items:center;background:#000;border-radius:14px;overflow:hidden;border:1px solid #222;min-height:50vh}
+  #cine{display:block;width:100%;height:100%;object-fit:contain;will-change:contents}
+  #badge{position:absolute;top:12px;left:12px;font-size:12px;background:rgba(14,165,164,.18);color:#67e8f9;padding:6px 10px;border-radius:8px;backdrop-filter:blur(6px)}
+  #hud{position:absolute;bottom:10px;left:10px;right:10px;display:flex;gap:8px;align-items:center}
+  #seek{flex:1}
+  .time{font-size:12px;color:#9aa2b2;min-width:72px;text-align:right}
+
+  @media (max-width:1100px){body{flex-direction:column}#controls,#viewer,#export{width:100%;max-height:none}#viewer{order:-1}}
 </style>
 </head>
 <body>
-  <div class="col controls" id="controlsContainer">
-    <h2>Editor Definitivo 💖</h2>
-    <label>Archivo de vídeo (local)</label>
-    <input id="videoFile" type="file" accept="video/*" />
+  <section id="controls" class="panel">
+    <h3>1) Controles</h3>
+    <label>Archivo de vídeo</label>
+    <input id="file" type="file" accept="video/*" />
+
     <label>Resolución de salida</label>
     <select id="outRes">
-      <option value="1280x720">720p HD</option>
-      <option value="1920x1080" selected>1080p Full HD</option>
-      <option value="3840x2160">4K UHD</option>
-      <option value="7680x4320">8K UHD</option>
+      <option value="1280x720">720p</option>
+      <option value="1920x1080" selected>1080p</option>
+      <option value="1080x2400">1080x2400 (Personalizado)</option>
+      <option value="3840x2160">4K</option>
+      <option value="7680x4320">8K</option>
+      <option value="11520x6480">12K (16:9)</option>
+      <option value="15360x8640">16K (16:9)</option>
     </select>
-    <label>Filtro de Película</label>
+
+    <label>FPS de previsualización</label>
+    <select id="prevFps">
+      <option>24</option><option>30</option><option selected>60</option><option>120</option>
+    </select>
+
+    <label>Escalado (Preview)</label>
+    <select id="scalePrev">
+      <option value="nearest">Mínima (rápido)</option>
+      <option value="bilinear" selected>Balanceada</option>
+    </select>
+
+    <label>Filtro</label>
     <select id="movieFilter">
-        <option value="0" selected>Ninguno</option>
-        <option value="1">Cinemático (Naranja y Turquesa)</option>
-        <option value="2">Vintage (Sepia Clásico)</option>
-        <option value="3">Noir (Blanco y Negro)</option>
-        <option value="4">Ensueño (Brillo Suave)</option>
-        <option value="5">Tecnicolor (Vibrante)</option>
+      <option value="0" selected>Ninguno</option>
+      <option value="1">Cinemático</option>
+      <option value="2">Vintage</option>
+      <option value="3">Noir</option>
+      <option value="4">Ensueño</option>
+      <option value="5">Tecnicolor</option>
     </select>
-    <label>Calidad de escalado</label>
-    <select id="scaleMode">
-      <option value="nearest">Nearest (Máxima Velocidad)</option>
-      <option value="bilinear" selected>Bilinear (Balanceado)</option>
-      <option value="bicubic">Bicubic (Máxima Calidad)</option>
-    </select>
-     <label>FPS (Salida y Preview)</label>
-    <select id="previewFps">
-      <option>24</option><option>30</option><option selected>60</option><option>120</option><option>240</option>
-    </select>
-    <label>Filtros Manuales (Acelerados por GPU)</label>
-    <div>
-      <div class="row"><label style="flex:1">Nitidez</label><input id="sharpen" type="range" min="0" max="2" step="0.01" value="0" /></div>
-      <div class="row"><label style="flex:1">Contraste</label><input id="contrast" type="range" min="0" max="2" step="0.01" value="1.0" /></div>
-      <div class="row"><label style="flex:1">Saturación</label><input id="saturation" type="range" min="0" max="2" step="0.01" value="1.0" /></div>
-      <div class="row"><label style="flex:1">Brillo</label><input id="brightness" type="range" min="0" max="2" step="0.01" value="1.0" /></div>
-      <div class="row"><label style="flex:1">Red. Ruido</label><input id="denoise" type="range" min="0" max="6" step="0.1" value="0" /></div>
-    </div>
-    <label>Controles</label>
+
+    <label>Ajustes (GPU)</label>
+    <div class="row"><span class="grow">Nitidez</span><input id="sharpen" type="range" min="0" max="2" step="0.01" value="0"/></div>
+    <div class="row"><span class="grow">Contraste</span><input id="contrast" type="range" min="0" max="2" step="0.01" value="1"/></div>
+    <div class="row"><span class="grow">Saturación</span><input id="saturation" type="range" min="0" max="2" step="0.01" value="1"/></div>
+    <div class="row"><span class="grow">Brillo</span><input id="brightness" type="range" min="0" max="2" step="0.01" value="1"/></div>
+    <div class="row"><span class="grow">Reducción de ruido</span><input id="denoise" type="range" min="0" max="6" step="0.1" value="0"/></div>
+
     <div class="row">
-      <button id="playBtn">▶ Reproducir</button>
-      <button id="pauseBtn">⏸ Pausa</button>
-      <button id="renderDownloadBtn" class="primary" disabled>⬇️ Renderizar y Descargar MP4</button>
-      <button id="cancelRenderBtn" class="danger" style="display:none;">❌ Cancelar</button>
+      <button id="play">▶ Reproducir</button>
+      <button id="pause">⏸ Pausa</button>
     </div>
-    <div style="margin-top:8px"><div class="status" id="status">Estado: inactivo</div></div>
-    <progress id="progressBar" value="0" max="100"></progress>
-    <hr/>
-    <small class="hint">Toda la carga de video se procesa en segundo plano para una interfaz 100% fluida.</small>
-  </div>
-  <div class="viewer">
-    <div class="canvas-wrap">
-      <canvas id="glcanvas"></canvas>
-      <div class="seek">
-        <input id="seekBar" type="range" min="0" step="0.01" value="0" style="flex:1"/>
-        <div class="time"><span id="curTime">0:00</span> / <span id="durTime">0:00</span></div>
+    <div class="status" id="status">Carga un vídeo para empezar.</div>
+  </section>
+
+  <section id="viewer" class="panel">
+    <div id="cine-wrap">
+      <div id="badge">Pantalla Cine • Ultra Fluida</div>
+      <canvas id="cine"></canvas>
+      <div id="hud">
+        <input id="seek" type="range" min="0" value="0" step="0.01" />
+        <div class="time"><span id="tCur">0:00</span> / <span id="tDur">0:00</span></div>
       </div>
     </div>
-  </div>
+  </section>
+
+  <section id="export" class="panel">
+    <h3>2) Exportar</h3>
+    <label>Escalado de render</label>
+    <select id="scaleRender">
+      <option value="bilinear">Bueno (rápido)</option>
+      <option value="bicubic" selected>Excelente (lento)</option>
+    </select>
+
+    <label>FPS de exportación</label>
+    <select id="outFps">
+      <option>24</option><option>30</option><option selected>60</option><option>120</option>
+    </select>
+
+    <label>Formato</label>
+    <select id="fmt">
+      <option value="auto" selected>Auto (recomendado)</option>
+      <option value="webm">WebM (VP9/Opus)</option>
+      <option value="mp4">MP4 (si tu navegador lo soporta)</option>
+    </select>
+
+    <div class="row">
+      <button id="startRec" class="primary">⚙️ Iniciar Render (Proceso Offline)</button>
+    </div>
+    <div class="row" id="recRow" style="display:none">
+      <button id="cancelRec" class="danger">✖ Cancelar Render</button>
+    </div>
+
+    <progress id="prog" value="0" max="100"></progress>
+    <a id="dl" class="secondary" style="display:none;text-align:center;padding:14px;font-weight:800" download>⬇️ Descargar vídeo</a>
+  </section>
 
 <script>
-const get = (id) => document.getElementById(id);
+const $ = id => document.getElementById(id);
+const el = {
+  file:$("file"), outRes:$("outRes"), prevFps:$("prevFps"), scalePrev:$("scalePrev"),
+  movieFilter:$("movieFilter"), sharpen:$("sharpen"), contrast:$("contrast"), saturation:$("saturation"), brightness:$("brightness"), denoise:$("denoise"),
+  play:$("play"), pause:$("pause"), status:$("status"),
+  seek:$("seek"), tCur:$("tCur"), tDur:$("tDur"),
+  cine:$("cine"),
+  startRec:$("startRec"), cancelRec:$("cancelRec"), recRow:$("recRow"), prog:$("prog"), dl:$("dl"),
+  fmt:$("fmt"), scaleRender:$("scaleRender"), outFps:$("outFps")
+};
 
-const canvas = get('glcanvas');
-const fileInput = get('videoFile');
-const status = get('status');
-const outRes = get('outRes');
-const playBtn = get('playBtn');
-const pauseBtn = get('pauseBtn');
-const renderDownloadBtn = get('renderDownloadBtn');
-const cancelRenderBtn = get('cancelRenderBtn');
-const previewFps = get('previewFps');
-const scaleMode = get('scaleMode');
-const seekBar = get('seekBar');
-const curTime = get('curTime');
-const durTime = get('durTime');
-const controlsContainer = get('controlsContainer');
-const progressBar = get('progressBar');
-const movieFilter = get('movieFilter');
+const v = document.createElement('video');
+Object.assign(v, {playsInline:true, preload:'metadata', crossOrigin:'anonymous', muted:true});
+document.body.appendChild(Object.assign(document.createElement('div'),{style:'display:none'})).appendChild(v);
 
+let gl, program, uniforms = {}, texture;
+const VS = `#version 300 es\n in vec2 aPos; in vec2 aTex; out vec2 vTex; void main(){ vTex = vec2(aTex.x, 1.0 - aTex.y); gl_Position = vec4(aPos,0.0,1.0);} `;
+const FS = `#version 300 es\n precision highp float; in vec2 vTex; out vec4 outColor; uniform sampler2D uTex; uniform vec2 uTexSize; uniform float uSharpen,uContrast,uSaturation,uBrightness,uDenoise; uniform int uMovie; float luma(vec3 c){return dot(c, vec3(0.299,0.587,0.114));} vec3 rgb2hsv(vec3 c){ vec4 K=vec4(0.,-0.3333333,0.6666667,-1.); vec4 p=mix(vec4(c.bg,K.wz), vec4(c.gb,K.xy), step(c.b,c.g)); vec4 q=mix(vec4(p.xyw,c.r), vec4(c.r,p.yzx), step(p.x,c.r)); float d=q.x-min(q.w,q.y); float e=1.0e-10; return vec3(abs(q.z+(q.w-q.y)/(6.0*d+e)), d/(q.x+e), q.x);} vec3 hsv2rgb(vec3 c){ vec3 rgb=clamp(abs(mod(c.x*6.0+vec3(0.,4.,2.),6.)-3.)-1.,0.,1.); return c.z*mix(vec3(1.),rgb,c.y);} void main(){ vec2 px=1.0/uTexSize; vec4 col=texture(uTex, vTex); if(uDenoise>0.01){ vec4 sum=vec4(0.0); for(int y=-1;y<=1;y++){ for(int x=-1;x<=1;x++){ sum += texture(uTex, vTex + vec2(float(x),float(y))*px); }} col = mix(col, sum/9.0, clamp(uDenoise/6.0,0.0,1.0)); } if(uSharpen>0.001){ vec4 b=(texture(uTex,vTex-px)+texture(uTex,vTex+px)+texture(uTex,vTex-vec2(px.y,px.x))+texture(uTex,vTex+vec2(px.y,px.x)))/4.0; col += (col-b)*uSharpen; } vec3 c=col.rgb; c*=uBrightness; c=((c-0.5)*uContrast)+0.5; vec3 h=rgb2hsv(c); h.y*=uSaturation; c=hsv2rgb(h); if(uMovie>0){ if(uMovie==1){ vec3 o=vec3(1.,.6,.2), t=vec3(.1,.5,.6); float L=luma(c); c=mix(c,o, clamp(L*1.2-0.2,0.0,0.7)); c=mix(c,t, clamp(1.0-L*1.5,0.0,0.5)); } else if(uMovie==2){ c = vec3(dot(c,vec3(.393,.769,.189)), dot(c,vec3(.349,.686,.168)), dot(c,vec3(.272,.534,.131))); } else if(uMovie==3){ float g=luma(c); c=vec3(g); c=((c-0.5)*1.5)+0.5; } else if(uMovie==4){ c=pow(c, vec3(.9)); } else if(uMovie==5){ vec3 hh=rgb2hsv(c); hh.y*=1.5; c=hsv2rgb(hh);} } outColor=vec4(clamp(c,0.,1.),1.); }`;
 
-let worker = null;
-let video = null; 
-let isRenderingCancelled = false;
-
-function getAppSettings() {
-    const filters = {};
-    ['sharpen', 'contrast', 'saturation', 'brightness', 'denoise'].forEach(id => {
-        filters[id] = parseFloat(get(id).value);
-    });
-    const [width, height] = outRes.value.split('x').map(v => parseInt(v, 10));
-    return {
-        width,
-        height,
-        fps: parseInt(previewFps.value, 10),
-        scaleMode: scaleMode.value,
-        movieFilter: parseInt(movieFilter.value, 10),
-        filters
-    };
+function glInit(){
+  gl = el.cine.getContext('webgl2', {antialias:true, desynchronized:true, preserveDrawingBuffer:true, powerPreference:'high-performance'});
+  if(!gl){ alert('Tu navegador no soporta WebGL2.'); return; }
+  const vs = gl.createShader(gl.VERTEX_SHADER); gl.shaderSource(vs, VS); gl.compileShader(vs);
+  const fs = gl.createShader(gl.FRAGMENT_SHADER); gl.shaderSource(fs, FS); gl.compileShader(fs);
+  program = gl.createProgram(); gl.attachShader(program,vs); gl.attachShader(program,fs); gl.linkProgram(program); gl.useProgram(program);
+  const quad = new Float32Array([ -1,-1,0,0, 1,-1,1,0, -1,1,0,1, 1,1,1,1 ]);
+  const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, quad, gl.STATIC_DRAW);
+  const aPos = gl.getAttribLocation(program,'aPos'); const aTex = gl.getAttribLocation(program,'aTex');
+  gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 16, 0);
+  gl.enableVertexAttribArray(aTex); gl.vertexAttribPointer(aTex, 2, gl.FLOAT, false, 16, 8);
+  texture = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  uniforms = {
+    uTex: gl.getUniformLocation(program,'uTex'), uTexSize: gl.getUniformLocation(program,'uTexSize'),
+    uSharpen: gl.getUniformLocation(program,'uSharpen'), uContrast: gl.getUniformLocation(program,'uContrast'),
+    uSaturation: gl.getUniformLocation(program,'uSaturation'), uBrightness: gl.getUniformLocation(program,'uBrightness'),
+    uDenoise: gl.getUniformLocation(program,'uDenoise'), uMovie: gl.getUniformLocation(program,'uMovie')
+  };
 }
 
-function setControlsEnabled(enabled, isRendering = false) {
-    controlsContainer.querySelectorAll('input, select').forEach(el => {
-        el.disabled = !enabled;
-    });
-    playBtn.disabled = !enabled;
-    pauseBtn.disabled = !enabled;
-    renderDownloadBtn.disabled = !enabled || !fileInput.files.length;
-
-    renderDownloadBtn.style.display = isRendering ? 'none' : 'inline-block';
-    cancelRenderBtn.style.display = isRendering ? 'inline-block' : 'none';
-    progressBar.style.display = isRendering ? 'block' : 'none';
+function resizeCanvas(){
+  const dpr = Math.min(devicePixelRatio||1, 1.5);
+  const r = el.cine.getBoundingClientRect();
+  el.cine.width = Math.max(2, Math.floor(r.width * dpr));
+  el.cine.height = Math.max(2, Math.floor(r.height * dpr));
+  if(gl) gl.viewport(0,0,el.cine.width, el.cine.height);
 }
 
-function formatTime(s) {
-    if (!s || !isFinite(s)) return '0:00';
-    const mm = Math.floor(s / 60);
-    const ss = Math.floor(s % 60).toString().padStart(2, '0');
-    return `${mm}:${ss}`;
+function updateTexture(applyFilter = true){
+  if(!gl || v.readyState < 2) return;
+  const isRendering = !applyFilter;
+  const scaleFilter = isRendering ? (el.scaleRender.value === 'bicubic' ? gl.LINEAR : gl.NEAREST) : (el.scalePrev.value === 'nearest' ? gl.NEAREST : gl.LINEAR);
+  
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, scaleFilter);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, scaleFilter);
+  
+  try{ gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,v); }
+  catch(e){ const w=v.videoWidth,h=v.videoHeight; gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,w,h,0,gl.RGBA,gl.UNSIGNED_BYTE,null); gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,gl.RGBA,gl.UNSIGNED_BYTE,v); }
+  
+  gl.uniform1i(uniforms.uTex,0);
+  gl.uniform2f(uniforms.uTexSize, v.videoWidth||1, v.videoHeight||1);
+
+  if(applyFilter){
+      gl.uniform1f(uniforms.uSharpen, +el.sharpen.value);
+      gl.uniform1f(uniforms.uContrast, +el.contrast.value);
+      gl.uniform1f(uniforms.uSaturation, +el.saturation.value);
+      gl.uniform1f(uniforms.uBrightness, +el.brightness.value);
+      gl.uniform1f(uniforms.uDenoise, +el.denoise.value);
+      gl.uniform1i(uniforms.uMovie, +el.movieFilter.value);
+  } else {
+      gl.uniform1f(uniforms.uSharpen, 0);
+      gl.uniform1f(uniforms.uContrast, 1);
+      gl.uniform1f(uniforms.uSaturation, 1);
+      gl.uniform1f(uniforms.uBrightness, 1);
+      gl.uniform1f(uniforms.uDenoise, 0);
+      gl.uniform1i(uniforms.uMovie, 0);
+  }
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.flush();
 }
 
-function initializeWorker() {
-    const workerCode = `
-        const VS=\`attribute vec2 aPos;attribute vec2 aTex;varying vec2 vTex;void main(){vTex=aTex;gl_Position=vec4(aPos,0.0,1.0);}\`;
-        const FS=\`precision mediump float;varying vec2 vTex;uniform sampler2D uTex;uniform vec2 uTexSize;uniform float uSharpen;uniform float uContrast;uniform float uSaturation;uniform float uBrightness;uniform float uDenoise;uniform int uMovieFilter;vec3 rgb2hsv(vec3 c){vec4 K=vec4(0.0,-1.0/3.0,2.0/3.0,-1.0);vec4 p=mix(vec4(c.bg,K.wz),vec4(c.gb,K.xy),step(c.b,c.g));vec4 q=mix(vec4(p.xyw,c.r),vec4(c.r,p.yzx),step(p.x,c.r));float d=q.x-min(q.w,q.y);float e=1.0e-10;return vec3(abs(q.z+(q.w-q.y)/(6.0*d+e)),d/(q.x+e),q.x);}vec3 hsv2rgb(vec3 c){vec3 rgb=clamp(abs(mod(c.x*6.0+vec3(0.0,4.0,2.0),6.0)-3.0)-1.0,0.0,1.0);return c.z*mix(vec3(1.0),rgb,c.y);}float luma(vec3 color){return dot(color,vec3(0.299,0.587,0.114));}void main(){vec4 col=texture2D(uTex,vTex);if(uDenoise>0.01){vec2 px=1.0/uTexSize;vec4 sum=vec4(0.0);for(int y=-1;y<=1;y++){for(int x=-1;x<=1;x++){sum+=texture2D(uTex,vTex+vec2(float(x),float(y))*px);}}col=mix(col,sum/9.0,clamp(uDenoise/6.0,0.0,1.0));}if(uSharpen>0.001){vec2 px=1.0/uTexSize;vec4 blur=(texture2D(uTex,vTex-px)+texture2D(uTex,vTex+px)+texture2D(uTex,vTex-vec2(px.y,px.x))+texture2D(uTex,vTex+vec2(px.y,px.x)))/4.0;vec4 mask=col-blur;col+=mask*uSharpen;}vec3 c=col.rgb;c*=uBrightness;c=((c-0.5)*uContrast)+0.5;vec3 hsv=rgb2hsv(c);hsv.y*=uSaturation;c=hsv2rgb(hsv);if(uMovieFilter>0){if(uMovieFilter==1){vec3 orange=vec3(1.0,0.6,0.2);vec3 teal=vec3(0.1,0.5,0.6);float l=luma(c);c=mix(c,orange,clamp(l*1.2-0.2,0.0,0.7));c=mix(c,teal,clamp(1.0-l*1.5,0.0,0.5));}else if(uMovieFilter==2){vec3 sepia=vec3(dot(c,vec3(0.393,0.769,0.189)),dot(c,vec3(0.349,0.686,0.168)),dot(c,vec3(0.272,0.534,0.131)));c=sepia;float dist=distance(vTex,vec2(0.5));c*=smoothstep(0.8,0.2,dist);}else if(uMovieFilter==3){float gray=luma(c);c=vec3(gray);c=((c-0.5)*1.5)+0.5;}else if(uMovieFilter==4){vec3 bloom=texture2D(uTex,vTex).rgb;c=mix(c,bloom,0.3);c=pow(c,vec3(0.8));}else if(uMovieFilter==5){vec3 hsv_tech=rgb2hsv(c);hsv_tech.y*=1.5;c=hsv2rgb(hsv_tech);}}gl_FragColor=vec4(clamp(c,0.0,1.0),col.a);}\`;
+function fmtTime(s){ if(!isFinite(s)) return '0:00'; const m=Math.floor(s/60); const ss=Math.floor(s%60).toString().padStart(2,'0'); return `${m}:${ss}`; }
 
-        let gl, program, buffers={}, uniforms={}, settings, renderCanvas, renderCtx, mediaRecorder, recordedChunks, fileExtension;
-
-        function initGL(canvas) {
-            gl = canvas.getContext('webgl2', { antialias: true, powerPreference: 'high-performance' }) || canvas.getContext('webgl', { antialias: false, powerPreference: 'low-power' });
-            
-            const vs = gl.createShader(gl.VERTEX_SHADER);
-            gl.shaderSource(vs, VS);
-            gl.compileShader(vs);
-
-            const fs = gl.createShader(gl.FRAGMENT_SHADER);
-            gl.shaderSource(fs, FS);
-            gl.compileShader(fs);
-
-            program = gl.createProgram();
-            gl.attachShader(program, vs);
-            gl.attachShader(program, fs);
-            gl.linkProgram(program);
-            gl.useProgram(program);
-
-            const quad = new Float32Array([-1,-1,0,0,1,-1,1,0,-1,1,0,1,1,1,1,1]);
-            buffers.vbo = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, buffers.vbo);
-            gl.bufferData(gl.ARRAY_BUFFER, quad, gl.STATIC_DRAW);
-            const aPos = gl.getAttribLocation(program, 'aPos');
-            const aTex = gl.getAttribLocation(program, 'aTex');
-            gl.enableVertexAttribArray(aPos);
-            gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 16, 0);
-            gl.enableVertexAttribArray(aTex);
-            gl.vertexAttribPointer(aTex, 2, gl.FLOAT, false, 16, 8);
-            
-            buffers.texture = gl.createTexture();
-            gl.bindTexture(gl.TEXTURE_2D, buffers.texture);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-             
-            uniforms = {
-                uTex: gl.getUniformLocation(program, 'uTex'), uTexSize: gl.getUniformLocation(program, 'uTexSize'),
-                uSharpen: gl.getUniformLocation(program, 'uSharpen'), uContrast: gl.getUniformLocation(program, 'uContrast'),
-                uSaturation: gl.getUniformLocation(program, 'uSaturation'), uBrightness: gl.getUniformLocation(program, 'uBrightness'),
-                uDenoise: gl.getUniformLocation(program, 'uDenoise'),
-                uMovieFilter: gl.getUniformLocation(program, 'uMovieFilter'),
-            };
-        }
-        
-        function drawFrame(frame) {
-            if (!gl || !frame) return;
-            
-            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-            gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, buffers.texture);
-
-            const filter = settings.scaleMode === 'nearest' ? gl.NEAREST : gl.LINEAR;
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
-
-            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, frame);
-            
-            for(const key in settings.filters) {
-                gl.uniform1f(uniforms['u'+key.charAt(0).toUpperCase() + key.slice(1)], settings.filters[key]);
-            }
-            gl.uniform1i(uniforms.uMovieFilter, settings.movieFilter);
-            gl.uniform2f(uniforms.uTexSize, frame.width, frame.height);
-            gl.uniform1i(uniforms.uTex, 0);
-            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        }
-
-        self.onmessage = (e) => {
-            const { type, payload } = e.data;
-            switch(type) {
-                case 'init':
-                    settings = payload.settings;
-                    initGL(payload.canvas);
-                    gl.canvas.width = payload.frameWidth;
-                    gl.canvas.height = payload.frameHeight;
-                    break;
-                case 'updateSettings':
-                    settings = payload;
-                    break;
-                case 'newFrame':
-                    gl.canvas.width = payload.frame.width;
-                    gl.canvas.height = payload.frame.height;
-                    drawFrame(payload.frame);
-                    payload.frame.close();
-                    break;
-                case 'startRender':
-                     settings = payload;
-                     renderCanvas = new OffscreenCanvas(settings.width, settings.height);
-                     renderCtx = renderCanvas.getContext('2d');
-                     // CORRECCIÓN: Voltear el canvas de renderizado para que coincida con la salida de WebGL
-                     renderCtx.translate(0, settings.height);
-                     renderCtx.scale(1, -1);
-                     
-                     const stream = renderCanvas.captureStream(settings.fps);
-                     
-                     const mp4Mime = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
-                     const webmMiMe = 'video/webm;codecs=vp9,opus';
-                     let mimeType = webmMiMe;
-                     fileExtension = 'webm';
-
-                     if (MediaRecorder.isTypeSupported(mp4Mime)) {
-                        mimeType = mp4Mime;
-                        fileExtension = 'mp4';
-                     } else {
-                        console.warn("MP4 no es soportado, usando WebM como alternativa.");
-                     }
-
-                     try {
-                        mediaRecorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 25000000 });
-                     } catch(err) {
-                        self.postMessage({ type: 'error', message: 'MediaRecorder no es compatible o el códec necesario no está disponible.' });
-                        return;
-                     }
-                     recordedChunks = [];
-                     mediaRecorder.ondataavailable = event => { if (event.data.size > 0) recordedChunks.push(event.data); };
-                     mediaRecorder.onstop = () => {
-                        const blob = new Blob(recordedChunks, { type: mimeType });
-                        self.postMessage({ type: 'downloadReady', payload: { blob, fileExtension } });
-                     };
-                     mediaRecorder.start();
-                     break;
-                case 'renderFrame':
-                    gl.canvas.width = payload.frame.width;
-                    gl.canvas.height = payload.frame.height;
-                    drawFrame(payload.frame);
-                    
-                    renderCtx.drawImage(gl.canvas, 0, 0, settings.width, settings.height);
-                    payload.frame.close();
-                    break;
-                case 'finishRender':
-                     if (mediaRecorder && mediaRecorder.state === 'recording') {
-                         mediaRecorder.stop();
-                     }
-                     break;
-            }
-        };
-    `;
-    const blob = new Blob([workerCode], { type: 'application/javascript' });
-    worker = new Worker(URL.createObjectURL(blob));
-
-    worker.onmessage = (e) => {
-        const { type, payload, message } = e.data;
-        switch (type) {
-            case 'downloadReady':
-                const url = URL.createObjectURL(payload.blob);
-                const a = document.createElement('a');
-                a.href = url;
-                const ts = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '');
-                a.download = `video_editado_${ts}.${payload.fileExtension}`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                status.textContent = 'Render completado. ¡Descargando!';
-                setControlsEnabled(true);
-                break;
-            case 'error':
-                 alert(message);
-                 status.textContent = 'Error en render.';
-                 setControlsEnabled(true, false);
-                 break;
-        }
-    };
-}
-
-function renderLoop() {
-    if (!video || video.paused || video.ended) {
-        return;
-    }
-    createImageBitmap(video).then(frame => {
-        worker.postMessage({ type: 'newFrame', payload: { frame } }, [frame]);
-    });
-    
-    if (!seekBar.matches(':active')) {
-      seekBar.value = video.currentTime;
-      curTime.textContent = formatTime(video.currentTime);
-    }
-    
-    video.requestVideoFrameCallback(renderLoop);
-}
-
-fileInput.addEventListener('change', () => {
-    const file = fileInput.files[0];
-    if (!file) return;
-
-    if (worker) {
-        worker.terminate();
-    }
-    initializeWorker();
-
-    const videoURL = URL.createObjectURL(file);
-    if (!video) {
-      video = document.createElement('video');
-      video.muted = true;
-      video.crossOrigin = "anonymous";
-      video.style.display = 'none';
-      document.body.appendChild(video);
-    }
-    video.src = videoURL;
-    video.load();
-
-    video.onloadedmetadata = () => {
-      if (!HTMLVideoElement.prototype.requestVideoFrameCallback) {
-        alert('Tu navegador es demasiado antiguo o no soporta APIs de video modernas. El rendimiento será bajo.');
+let rafId=0;
+function startPreview(){
+  stopPreview();
+  v.muted = false;
+  const tick = ()=>{
+      if(v.paused || v.ended) {
+          stopPreview();
+          return;
       }
-      const offscreen = canvas.transferControlToOffscreen();
-      const settings = getAppSettings();
-      worker.postMessage({ type: 'init', payload: { canvas: offscreen, settings, frameWidth: video.videoWidth, frameHeight: video.videoHeight } }, [offscreen]);
+      updateTexture();
+      if(!el.seek.matches(':active')){
+          el.seek.value = v.currentTime;
+          el.tCur.textContent = fmtTime(v.currentTime);
+      }
+      rafId=requestAnimationFrame(tick);
+  };
+  rafId = requestAnimationFrame(tick);
+}
+function stopPreview(){ if(rafId){ cancelAnimationFrame(rafId); rafId=0; } v.muted = true; }
+
+el.file.addEventListener('change', ()=>{
+  const f = el.file.files[0]; if(!f) return;
+  const url = URL.createObjectURL(f);
+  v.src = url; v.load();
+  v.onloadedmetadata = ()=>{
+    resizeCanvas(); if(!gl) glInit();
+    el.seek.max = v.duration||0; el.tDur.textContent = fmtTime(v.duration||0);
+    el.status.textContent = 'Vídeo listo.';
+    v.currentTime = 0; setTimeout(()=>{ updateTexture(); el.tCur.textContent = fmtTime(0); }, 60);
+  };
+  v.onerror = ()=>{ el.status.textContent='Error al cargar el vídeo.'; };
+});
+
+el.play.addEventListener('click', ()=>{ if(v.readyState>=2){ v.play(); startPreview(); }});
+el.pause.addEventListener('click', ()=>{ v.pause(); stopPreview(); updateTexture(); });
+el.seek.addEventListener('input', ()=>{ el.tCur.textContent = fmtTime(+el.seek.value); });
+el.seek.addEventListener('change', ()=>{ v.currentTime = +el.seek.value; if(v.paused) updateTexture(); });
+window.addEventListener('resize', ()=>{ resizeCanvas(); if(v.paused) updateTexture(); });
+window.addEventListener('keydown', (e)=>{ if(e.code==='Space' && !['INPUT','SELECT','TEXTAREA','BUTTON'].includes(document.activeElement.tagName)){ e.preventDefault(); if(v.paused) el.play.click(); else el.pause.click(); }});
+
+let rec, recChunks=[], recMime='', recUrl='';
+let cancelRenderFlag = false;
+
+function pickMime(){
+  if(el.fmt.value==='mp4'){ const m='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'; return MediaRecorder.isTypeSupported(m)?m:''; }
+  if(el.fmt.value==='webm'){ const m='video/webm;codecs=vp9,opus'; if(MediaRecorder.isTypeSupported(m)) return m; const m2='video/webm;codecs=vp8,opus'; if(MediaRecorder.isTypeSupported(m2)) return m2; return ''; }
+  const candidates=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4; codecs="avc1.42E01E, mp4a.40.2"'];
+  for(const m of candidates){ if(MediaRecorder.isTypeSupported(m)) return m; }
+  return '';
+}
+
+function calcOutWH(){ const [w,h] = el.outRes.value.split('x').map(n=>parseInt(n,10)); return {w,h}; }
+
+async function startRecording(){
+  if(v.readyState < 2){ alert('Carga un vídeo primero.'); return; }
+  if(rec && rec.state === "recording"){ alert('Ya hay un render en progreso.'); return; }
+
+  v.pause();
+  stopPreview();
+  cancelRenderFlag = false;
+
+  el.startRec.disabled = true;
+  el.recRow.style.display = 'flex';
+  el.prog.style.display = 'block';
+  el.dl.style.display = 'none';
+  el.prog.value = 0;
+  el.status.textContent = 'Inicializando render...';
+
+  const {w,h} = calcOutWH();
+  const fps = Math.max(24, +el.outFps.value||60);
+  const present = document.createElement('canvas');
+  present.width = w;
+  present.height = h;
+  const pctx = present.getContext('2d', {alpha:false});
+  pctx.imageSmoothingEnabled = true;
+  pctx.imageSmoothingQuality = el.scaleRender.value === 'bicubic' ? 'high' : 'medium';
+
+  const finalStream = new MediaStream();
+  const canvasVideoStream = present.captureStream(fps).getVideoTracks()[0];
+  finalStream.addTrack(canvasVideoStream);
+
+  let audioContext, audioSourceNode;
+  try {
+      const response = await fetch(v.src);
+      const arrayBuffer = await response.arrayBuffer();
+      audioContext = new AudioContext();
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      audioSourceNode = audioContext.createBufferSource();
+      audioSourceNode.buffer = audioBuffer;
+      const mediaStreamDestination = audioContext.createMediaStreamDestination();
+      audioSourceNode.connect(mediaStreamDestination);
+      const audioTrack = mediaStreamDestination.stream.getAudioTracks()[0];
+      if(audioTrack) finalStream.addTrack(audioTrack);
+  } catch(e) {
+      console.warn("No se pudo procesar el audio, el vídeo final podría no tener sonido.", e);
+  }
+
+  const mime = pickMime();
+  if(!mime){ alert('MediaRecorder no soportado en este navegador.'); el.startRec.disabled = false; el.recRow.style.display = 'none'; el.prog.style.display = 'none'; return; }
+  recMime = mime;
+
+  let videoBitsPerSecond;
+  const pixels = w * h;
+  if (pixels >= 7680 * 4320) { videoBitsPerSecond = 100_000_000; }
+  else if (pixels >= 3840 * 2160) { videoBitsPerSecond = 50_000_000; }
+  else if (pixels >= 1920 * 1080) { videoBitsPerSecond = 20_000_000; }
+  else { videoBitsPerSecond = 8_000_000; }
+
+  try{ rec = new MediaRecorder(finalStream, {mimeType:mime, videoBitsPerSecond, audioBitsPerSecond: 256_000}); }
+  catch(err){ alert('No se pudo iniciar el grabador: '+err.message); el.startRec.disabled = false; el.recRow.style.display = 'none'; el.prog.style.display = 'none'; return; }
+
+  recChunks.length = 0;
+  rec.ondataavailable = ev => { if(ev.data && ev.data.size) recChunks.push(ev.data); };
+  rec.onstop = () => {
+    if(audioContext) audioContext.close();
+    if(cancelRenderFlag) {
+        recChunks.length = 0;
+        el.status.textContent = 'Render cancelado.';
+    } else {
+        const blob = new Blob(recChunks, {type: recMime});
+        if(recUrl) URL.revokeObjectURL(recUrl);
+        recUrl = URL.createObjectURL(blob);
+        el.dl.href = recUrl;
+        const ext = recMime.includes('mp4')?'mp4':'webm';
+        el.dl.download = `video_editado_${Date.now()}.${ext}`;
+        el.dl.style.display='block';
+        el.status.textContent='Render completo. Listo para descargar.';
+        el.prog.style.display='none';
+    }
+    el.recRow.style.display='none';
+    el.startRec.disabled=false;
+    v.currentTime = 0;
+    updateTexture();
+  };
+  
+  el.cancelRec.onclick = () => { cancelRenderFlag = true; };
+
+  rec.start();
+  if(audioSourceNode) audioSourceNode.start(0);
+  
+  const duration = v.duration;
+  const totalFrames = Math.floor(duration * fps);
+  
+  for (let frame = 0; frame < totalFrames; frame++) {
+      if (cancelRenderFlag) {
+          if (rec.state === "recording") rec.stop();
+          return;
+      }
       
-      setControlsEnabled(true);
-      status.textContent = `Video cargado: ${video.videoWidth}x${video.videoHeight}`;
+      const currentTime = frame / fps;
+      v.currentTime = currentTime;
+      await new Promise(resolve => {
+        const onSeeked = () => {
+            v.removeEventListener('seeked', onSeeked);
+            resolve();
+        };
+        v.addEventListener('seeked', onSeeked);
+      });
+      
+      updateTexture(true); 
+      pctx.clearRect(0, 0, w, h);
+      pctx.drawImage(el.cine, 0, 0, w, h);
 
-      seekBar.max = video.duration;
-      durTime.textContent = formatTime(video.duration);
-    };
-    
-    video.onerror = () => {
-        alert("Error al cargar el archivo de video. Puede estar corrupto o en un formato no compatible.");
-        status.textContent = "Error de carga.";
-        setControlsEnabled(false);
-    };
-});
-
-playBtn.addEventListener('click', () => {
-  if(video) {
-    video.play();
-    video.requestVideoFrameCallback(renderLoop);
+      const progress = Math.round(((frame + 1) / totalFrames) * 100);
+      el.prog.value = progress;
+      el.status.textContent = `Renderizando fotograma ${frame + 1} de ${totalFrames}... ${progress}%`;
   }
-});
-pauseBtn.addEventListener('click', () => {
-  if(video) {
-    video.pause();
+  
+  if (rec.state === "recording") {
+      rec.stop();
   }
-});
-
-seekBar.addEventListener('input', () => {
-    curTime.textContent = formatTime(parseFloat(seekBar.value));
-});
-seekBar.addEventListener('change', () => {
-    if(video) {
-      video.currentTime = parseFloat(seekBar.value);
-      if (video.paused) {
-          video.onseeked = () => {
-            createImageBitmap(video).then(frame => {
-              worker.postMessage({ type: 'newFrame', payload: { frame } }, [frame]);
-            });
-            video.onseeked = null;
-          }
-      }
-    }
-});
-
-async function startFileRender() {
-    if (!worker || !video) return;
-
-    setControlsEnabled(false, true);
-    isRenderingCancelled = false;
-    progressBar.value = 0;
-    
-    const settings = getAppSettings();
-    worker.postMessage({ type: 'startRender', payload: settings });
-
-    status.textContent = 'Iniciando render...';
-    
-    const totalFrames = Math.floor(video.duration * settings.fps);
-    video.pause();
-    video.currentTime = 0;
-    
-    // Pequeña espera para asegurar que el currentTime se ha actualizado
-    await new Promise(res => setTimeout(res, 50));
-
-    for (let i = 0; i <= totalFrames; i++) {
-        if (isRenderingCancelled) {
-            status.textContent = 'Render cancelado.';
-            worker.postMessage({ type: 'finishRender' });
-            setControlsEnabled(true);
-            return;
-        }
-
-        const time = i / settings.fps;
-        if (time > video.duration) break;
-
-        video.currentTime = time;
-        await new Promise(res => video.addEventListener('seeked', res, { once: true }));
-        
-        const frame = await createImageBitmap(video);
-        worker.postMessage({ type: 'renderFrame', payload: { frame } }, [frame]);
-
-        const progress = Math.round((i / totalFrames) * 100);
-        status.textContent = `Renderizando... ${progress}%`;
-        progressBar.value = progress;
-    }
-
-    worker.postMessage({ type: 'finishRender' });
 }
 
-
-renderDownloadBtn.addEventListener('click', startFileRender);
-cancelRenderBtn.addEventListener('click', () => {
-    isRenderingCancelled = true;
-});
-
-// Unificar todos los listeners
-const allControls = ['outRes', 'previewFps', 'scaleMode', 'sharpen', 'contrast', 'saturation', 'brightness', 'denoise', 'movieFilter'];
-allControls.forEach(id => {
-    get(id).addEventListener('change', () => {
-        if (worker) {
-          const settings = getAppSettings();
-          worker.postMessage({ type: 'updateSettings', payload: settings });
-          if (video && video.paused) {
-              video.onseeked = () => {
-                createImageBitmap(video).then(frame => {
-                  worker.postMessage({ type: 'newFrame', payload: { frame } }, [frame]);
-                });
-                video.onseeked = null;
-              }
-              // Forzar un re-seek para que se actualice el frame
-              video.currentTime = video.currentTime;
-          }
-        }
-    });
-});
-
-window.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' && document.activeElement.tagName !== 'BUTTON' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'SELECT') {
-        e.preventDefault();
-        if(video) {
-          if(video.paused) {
-            playBtn.click();
-          } else {
-            pauseBtn.click();
-          }
-        }
-    }
-});
-
+el.startRec.addEventListener('click', startRecording);
+resizeCanvas();
+el.status.textContent='Listo. Carga un vídeo y dale Play.';
 </script>
 </body>
 </html>

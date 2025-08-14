@@ -44,6 +44,7 @@
             justify-content: center;
             align-items: center;
             background-color: #fafafa;
+            overflow: hidden; /* Para que la imagen no se desborde */
         }
 
         #image-preview {
@@ -220,7 +221,6 @@
                     <option value="dynamic">Dinámico (Estilo CoD)</option>
                 </select>
             </div>
-            <!-- === NUEVO SELECTOR DE HZ === -->
             <div class="filter-group">
                 <label for="hz-selector">Efecto de Claridad (Tasa de Refresco)</label>
                 <select id="hz-selector">
@@ -401,7 +401,8 @@
                 applyFilters();
             });
             
-            // --- NUEVA LÓGICA DE DESCARGA ---
+            // --- LÓGICA DE DESCARGA CORREGIDA ---
+            // Esta función utiliza un canvas para aplicar los filtros a la imagen antes de descargarla.
             downloadButton.addEventListener('click', () => {
                 if (!imagePreview.src || downloadButton.disabled) return;
 
@@ -409,30 +410,33 @@
                 const ctx = canvas.getContext('2d');
                 const img = new Image();
                 
-                // Asegurar que la imagen cargue completamente antes de dibujarla
+                // Es crucial usar una instancia de imagen nueva y su evento onload
+                // para asegurarse de que la imagen esté completamente cargada antes de dibujarla.
                 img.onload = () => {
-                    // Establecer las dimensiones del canvas igual a las de la imagen original
+                    // Establecer las dimensiones del canvas para que coincidan con la imagen original.
                     canvas.width = img.naturalWidth;
                     canvas.height = img.naturalHeight;
 
-                    // Aplicar los filtros CSS al contexto del canvas
+                    // Aplicar la misma cadena de filtros de CSS al contexto del canvas.
                     ctx.filter = getFilterString();
 
                     // Dibujar la imagen en el canvas. Los filtros se aplicarán en este paso.
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-                    // Crear el enlace de descarga
+                    // Crear un enlace de descarga temporal.
                     const link = document.createElement('a');
-                    link.download = 'imagen-mejorada.png';
-                    link.href = canvas.toDataURL('image/png'); // Obtener la URL de datos del canvas con los filtros
+                    link.download = 'imagen-editada.png'; // Nombre del archivo descargado.
+                    
+                    // La URL del enlace es el contenido del canvas convertido a formato de imagen PNG.
+                    link.href = canvas.toDataURL('image/png');
                     
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
                 };
 
-                // Establecer el src de la nueva imagen para que se cargue.
-                // Es importante hacer esto después de definir el .onload
+                // Asignar el src de la imagen de vista previa a la nueva instancia de imagen
+                // para que se cargue. Esto debe hacerse DESPUÉS de definir el evento .onload
                 img.src = imagePreview.src;
             });
 
@@ -441,4 +445,4 @@
         });
     </script>
 </body>
-  </html>
+    </html>

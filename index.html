@@ -1,641 +1,444 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>G-Flux Singularity :: Edición de Precisión Molecular</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@400;500;700&display=swap');
-:root {
-  --bg-gradient-start: #020024;
-  --bg-gradient-mid: #0d0d2b;
-  --bg-gradient-end: #000000;
-  --panel-bg: rgba(15, 17, 34, 0.85);
-  --panel-border: rgba(118, 56, 228, 0.4);
-  --panel-shadow: rgba(56, 18, 148, 0.5);
-  --text-primary: #f0f0ff;
-  --text-secondary: #a0a0c0;
-  --accent-primary: #00f2ea;
-  --accent-secondary: #7638e4;
-  --danger: #ff3b5f;
-  --glow-primary: rgba(0, 242, 234, 0.7);
-  --glow-secondary: rgba(118, 56, 228, 0.7);
-  --font-main: 'Roboto', sans-serif;
-  --font-display: 'Orbitron', sans-serif;
-}
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body {
-  margin: 0;
-  background: radial-gradient(ellipse at bottom, var(--bg-gradient-start) 0%, var(--bg-gradient-mid) 50%, var(--bg-gradient-end) 100%);
-  color: var(--text-primary);
-  font-family: var(--font-main);
-  display: flex;
-  gap: 20px;
-  padding: 20px;
-  min-height: 100vh;
-}
-.panel {
-  background: var(--panel-bg);
-  border: 1px solid var(--panel-border);
-  border-radius: 20px;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 10px 50px var(--panel-shadow);
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  transition: all 0.3s ease;
-}
-#controls {
-  width: 400px;
-  min-width: 320px;
-  max-height: calc(100vh - 40px);
-  overflow-y: auto;
-}
-#controls::-webkit-scrollbar {
-    width: 8px;
-}
-#controls::-webkit-scrollbar-track {
-    background: rgba(0,0,0,0.3);
-    border-radius: 10px;
-}
-#controls::-webkit-scrollbar-thumb {
-    background: var(--accent-secondary);
-    border-radius: 10px;
-}
-#controls::-webkit-scrollbar-thumb:hover {
-    background: var(--accent-primary);
-}
-#viewer { flex: 1; min-width: 400px; display: flex; flex-direction: column; gap: 16px; }
-#export { width: 420px; min-width: 320px; }
-h3 {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 24px;
-  margin: 0 0 10px 0;
-  color: var(--accent-primary);
-  text-shadow: 0 0 8px var(--glow-primary);
-}
-label {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 14px;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-input[type=file], select {
-  width: 100%;
-  background: rgba(0,0,0,0.4);
-  color: var(--text-primary);
-  border: 1px solid var(--panel-border);
-  border-radius: 10px;
-  padding: 12px;
-  font-family: var(--font-main);
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
-input[type=file]::file-selector-button {
-  background: var(--accent-secondary);
-  border: none;
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-weight: 700;
-  cursor: pointer;
-  margin-right: 10px;
-}
-input[type=file]:hover, select:hover {
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 15px var(--glow-primary);
-}
-.range-wrap { display: flex; gap: 10px; align-items: center; }
-.range-wrap .label { flex-basis: 140px; font-weight: 500; font-size: 14px; }
-.range-wrap .value { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--accent-primary); min-width: 30px; text-align: right; }
-input[type=range] {
-  width: 100%;
-  -webkit-appearance: none;
-  background: transparent;
-  accent-color: var(--accent-primary);
-}
-input[type=range]::-webkit-slider-runnable-track {
-  height: 6px;
-  background: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary));
-  border-radius: 6px;
-}
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  height: 20px;
-  width: 20px;
-  background: #fff;
-  border-radius: 50%;
-  border: 3px solid var(--accent-primary);
-  margin-top: -7px;
-  box-shadow: 0 0 10px var(--glow-primary);
-  cursor: pointer;
-}
-button {
-  border: 1px solid transparent;
-  border-radius: 10px;
-  padding: 12px 18px;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 14px;
-  background-image: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
-  color: #000;
-  cursor: pointer;
-  transition: all .25s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  position: relative;
-  overflow: hidden;
-}
-button:before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  transition: all .5s;
-}
-button:hover:not(:disabled) {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 8px 30px var(--glow-secondary);
-}
-button:hover:not(:disabled):before { left: 100%; }
-button:disabled { opacity: .5; cursor: not-allowed; }
-.danger { background-image: linear-gradient(135deg, #ff3b5f, #ff7e5f); }
-.danger:hover:not(:disabled) { box-shadow: 0 8px 30px rgba(255, 59, 95, 0.5); }
-.status {
-  min-height: 2.6em;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  color: var(--text-secondary);
-  background: rgba(0,0,0,0.3);
-  border: 1px dashed var(--panel-border);
-  border-radius: 10px;
-  padding: 10px;
-  text-align: center;
-}
-progress {
-  width: 100%;
-  height: 12px;
-  border: 1px solid var(--panel-border);
-  border-radius: 8px;
-  overflow: hidden;
-  display: none;
-}
-progress::-webkit-progress-bar { background: rgba(0,0,0,0.3); }
-progress::-webkit-progress-value { background-image: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary)); transition: width 0.3s ease; }
-#cine-wrap {
-  position: relative;
-  flex: 1;
-  display: grid;
-  place-items: center;
-  background: #000;
-  border-radius: 16px;
-  overflow: hidden;
-  border: 2px solid var(--panel-border);
-  box-shadow: 0 0 30px var(--glow-secondary) inset, 0 0 20px var(--panel-shadow);
-  min-height: 50vh;
-}
-#cine { display: block; width: 100%; height: 100%; object-fit: contain; }
-#badge {
-  position: absolute;
-  top: 15px;
-  left: 15px;
-  font-family: var(--font-display);
-  font-size: 12px;
-  background: rgba(118, 56, 228, 0.2);
-  color: var(--accent-primary);
-  padding: 8px 12px;
-  border-radius: 8px;
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--panel-border);
-  text-shadow: 0 0 4px var(--glow-primary);
-}
-#hud {
-  position: absolute;
-  bottom: 15px;
-  left: 15px;
-  right: 15px;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  background: rgba(0,0,0,0.4);
-  padding: 8px 12px;
-  border-radius: 10px;
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--panel-border);
-}
-#seek { flex: 1; }
-.time { font-family: var(--font-display); font-size: 14px; color: var(--text-secondary); min-width: 90px; text-align: right; }
-#dl {
-  display:none;
-  text-align:center;
-  padding:16px;
-  font-family: var(--font-display);
-  font-weight:900;
-  font-size:18px;
-  text-decoration:none;
-  text-transform:uppercase;
-  border-radius:12px;
-  background-image: linear-gradient(135deg, #00f2ea, #00b3a7);
-  color:#000;
-  transition: all .25s ease;
-}
-#dl:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 8px 30px var(--glow-primary);
-}
-@media (max-width:1400px){body{flex-direction:column}#controls,#viewer,#export{width:100%;max-height:none}#viewer{order:-1}}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Gráficos de Imagen</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1em;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background: #fff;
+            padding: 2em;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 1em;
+            color: #1a1a1a;
+            font-size: 1.5em;
+        }
+
+        .image-container {
+            margin: 2em 0;
+            border: 2px dashed #ccc;
+            padding: 1em;
+            border-radius: 5px;
+            min-height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #fafafa;
+        }
+
+        #image-preview {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 5px;
+            transition: filter 0.3s ease-in-out;
+            display: none; /* Oculta hasta que se carga una imagen */
+        }
+        
+        #placeholder-text {
+            color: #888;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5em;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin-bottom: 1em;
+            width: 100%;
+        }
+
+        .btn {
+            border: 2px solid #007bff;
+            color: white;
+            background-color: #007bff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        #image-upload {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .filter-group, .slider-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        label {
+            margin-bottom: 0.5em;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #ddd;
+            border-radius: 5px;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+
+        input[type="range"]:hover {
+            opacity: 1;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #007bff;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #007bff;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+
+        select {
+            width: 100%;
+            padding: 0.8em;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+        }
+
+        .slider-group span {
+            align-self: flex-end;
+            margin-top: -1.5em;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1em;
+            margin-top: 1.5em;
+        }
+
+        .action-button {
+             padding: 0.8em 1.5em;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+        
+        #download-button {
+            background-color: #28a745;
+        }
+        #download-button:hover {
+            background-color: #218838;
+        }
+        #download-button:disabled {
+            background-color: #a5d6a7;
+            cursor: not-allowed;
+        }
+
+        #reset-button {
+            background-color: #dc3545;
+        }
+
+        #reset-button:hover {
+            background-color: #c82333;
+        }
+    </style>
 </head>
 <body>
-  <section id="controls" class="panel">
-    <h3>[1] CONTROLES</h3>
-    <label>Activo de Vídeo</label>
-    <input id="file" type="file" accept="video/*" />
 
-    <label>Resolución de Salida</label>
-    <select id="outRes">
-      <option value="1280x720">720p HD</option>
-      <option value="1920x1080" selected>1080p Full HD</option>
-      <option value="3840x2160">4K Ultra HD</option>
-      <option value="7680x4320">8K Hyper Reality</option>
-    </select>
-
-    <label>FPS de Previsualización</label>
-    <select id="prevFps">
-      <option>60</option><option>120</option><option selected>240</option>
-    </select>
-    
-    <label>Filtros Cuánticos</label>
-    <select id="movieFilter">
-      <option value="0" selected>-- Ninguno --</option>
-      <option value="1">Neón-Noir</option>
-      <option value="2">Crono-Sepia</option>
-      <option value="3">Monocromo Galáctico</option>
-      <option value="4">Ensueño Lúcido</option>
-      <option value="5">Technicolor Omega</option>
-    </select>
-
-    <label>Ajustes de Precisión (GPU)</label>
-    <div class="range-wrap"><span class="label">Nitidez</span><input id="sharpen" type="range" min="0" max="100" step="1" value="0"/><span class="value" id="sharpenValue">0</span></div>
-    <div class="range-wrap"><span class="label">Contraste</span><input id="contrast" type="range" min="0" max="200" step="1" value="100"/><span class="value" id="contrastValue">100</span></div>
-    <div class="range-wrap"><span class="label">Saturación</span><input id="saturation" type="range" min="0" max="200" step="1" value="100"/><span class="value" id="saturationValue">100</span></div>
-    <div class="range-wrap"><span class="label">Brillo</span><input id="brightness" type="range" min="0" max="200" step="1" value="100"/><span class="value" id="brightnessValue">100</span></div>
-    <div class="range-wrap"><span class="label">Anti-Ruido</span><input id="denoise" type="range" min="0" max="100" step="1" value="0"/><span class="value" id="denoiseValue">0</span></div>
-
-    <div class="row" style="display:flex; gap:10px;">
-      <button id="play" style="flex:1;">▶ Iniciar Flujo</button>
-      <button id="pause" style="flex:1;">⏸ Detener Flujo</button>
-    </div>
-    <div class="status" id="status">Cargue un activo para iniciar la singularidad.</div>
-  </section>
-
-  <section id="viewer" class="panel">
-    <div id="cine-wrap">
-      <div id="badge">SINGULARITY ENGINE :: VISOR DE FLUJO</div>
-      <canvas id="cine"></canvas>
-      <div id="hud">
-        <input id="seek" type="range" min="0" value="0" step="0.01" />
-        <div class="time"><span id="tCur">0:00.00</span> / <span id="tDur">0:00.00</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section id="export" class="panel">
-    <h3>[2] EXPORTACIÓN</h3>
-    <label>Calidad de Render</label>
-    <select id="scaleRender">
-      <option value="bilinear">Ultra Rápida</option>
-      <option value="bicubic" selected>Calidad de Estudio</option>
-    </select>
-
-    <label>FPS de Exportación</label>
-    <select id="outFps">
-      <option>60</option><option>120</option><option selected>240</option>
-    </select>
-
-    <label>Contenedor</label>
-    <select id="fmt">
-      <option value="auto" selected>Auto (Recomendado)</option>
-      <option value="webm">WebM (VP9/Opus)</option>
-      <option value="mp4">MP4 (Experimental)</option>
-    </select>
-
-    <button id="startRec" class="primary">⚙️ RENDERIZAR VÍDEO (0% LAG)</button>
-    
-    <div id="recRow" style="display:none; flex-direction:column; gap: 10px;">
-        <button id="stopRec" class="danger">■ DETENER Y GUARDAR</button>
-        <button id="cancelRec" class="danger">✖ CANCELAR RENDER</button>
+    <div class="container">
+        <h1>Editor de Gráficos de Imagen</h1>
+        <div class="image-container">
+            <span id="placeholder-text">Sube una imagen para ver la vista previa</span>
+            <img id="image-preview" src="" alt="Vista previa de la imagen">
+        </div>
+        <div class="controls">
+            <div class="file-input-wrapper">
+                <button class="btn">Seleccionar Imagen</button>
+                <input type="file" id="image-upload" accept="image/*">
+            </div>
+            <div class="filter-group">
+                <label for="preset-filters">Filtros Preestablecidos (Estilo de Juego)</label>
+                <select id="preset-filters">
+                    <option value="none">Normal</option>
+                    <option value="vivid">Vívido (Estilo iPhone)</option>
+                    <option value="movie">Película (Estilo PUBG)</option>
+                    <option value="dynamic">Dinámico (Estilo CoD)</option>
+                </select>
+            </div>
+            <!-- === NUEVO SELECTOR DE HZ === -->
+            <div class="filter-group">
+                <label for="hz-selector">Efecto de Claridad (Tasa de Refresco)</label>
+                <select id="hz-selector">
+                    <option value="60">60 HZ (Estándar)</option>
+                    <option value="90">90 HZ (Fluido)</option>
+                    <option value="120">120 HZ (Extra Fluido)</option>
+                    <option value="144">144 HZ (Máximo)</option>
+                </select>
+            </div>
+            <div class="slider-group">
+                <label for="brightness">Brillo</label>
+                <input type="range" id="brightness" min="0" max="200" value="100">
+                <span id="brightness-value">100%</span>
+            </div>
+            <div class="slider-group">
+                <label for="contrast">Contraste</label>
+                <input type="range" id="contrast" min="0" max="200" value="100">
+                <span id="contrast-value">100%</span>
+            </div>
+            <div class="slider-group">
+                <label for="saturate">Saturación</label>
+                <input type="range" id="saturate" min="0" max="300" value="100">
+                <span id="saturate-value">100%</span>
+            </div>
+            <div class="slider-group">
+                <label for="sharpen">Desenfoque (Nitidez Invertida)</label>
+                <input type="range" id="sharpen" min="0" max="5" value="0" step="0.1">
+                <span id="sharpen-value">0px</span>
+            </div>
+            <div class="slider-group">
+                <label for="hdr">Efecto HDR</label>
+                <input type="range" id="hdr" min="0" max="100" value="0" step="1">
+                <span id="hdr-value">0%</span>
+            </div>
+            <div class="button-group">
+                <button id="download-button" class="action-button" disabled>Descargar Imagen</button>
+                <button id="reset-button" class="action-button">Restablecer Filtros</button>
+            </div>
+        </div>
     </div>
 
-    <progress id="prog" value="0" max="100"></progress>
-    <a id="dl" download>⬇️ DESCARGAR ACTIVO FINAL</a>
-  </section>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const imageUpload = document.getElementById('image-upload');
+            const imagePreview = document.getElementById('image-preview');
+            const placeholderText = document.getElementById('placeholder-text');
 
-<script>
-const $ = id => document.getElementById(id);
-const el = {
-  file:$("file"), outRes:$("outRes"), prevFps:$("prevFps"), scalePrev:$("scalePrev"),
-  movieFilter:$("movieFilter"), sharpen:$("sharpen"), contrast:$("contrast"), saturation:$("saturation"), brightness:$("brightness"), denoise:$("denoise"),
-  sharpenValue:$("sharpenValue"), contrastValue:$("contrastValue"), saturationValue:$("saturationValue"), brightnessValue:$("brightnessValue"), denoiseValue:$("denoiseValue"),
-  play:$("play"), pause:$("pause"), status:$("status"),
-  seek:$("seek"), tCur:$("tCur"), tDur:$("tDur"),
-  cine:$("cine"),
-  startRec:$("startRec"), stopRec:$("stopRec"), cancelRec:$("cancelRec"), recRow:$("recRow"), prog:$("prog"), dl:$("dl"),
-  fmt:$("fmt"), scaleRender:$("scaleRender"), outFps:$("outFps")
-};
+            const presetFilters = document.getElementById('preset-filters');
+            const hzSelector = document.getElementById('hz-selector');
+            const brightnessSlider = document.getElementById('brightness');
+            const contrastSlider = document.getElementById('contrast');
+            const saturateSlider = document.getElementById('saturate');
+            const sharpenSlider = document.getElementById('sharpen');
+            const hdrSlider = document.getElementById('hdr');
+            
+            const resetButton = document.getElementById('reset-button');
+            const downloadButton = document.getElementById('download-button');
 
-const v = document.createElement('video');
-Object.assign(v, {playsInline:true, preload:'metadata', crossOrigin:'anonymous', style:'display:none'});
-document.body.appendChild(v);
+            const brightnessValue = document.getElementById('brightness-value');
+            const contrastValue = document.getElementById('contrast-value');
+            const saturateValue = document.getElementById('saturate-value');
+            const sharpenValue = document.getElementById('sharpen-value');
+            const hdrValue = document.getElementById('hdr-value');
+            
+            const initialValues = {
+                brightness: 100,
+                contrast: 100,
+                saturate: 100,
+                sharpen: 0,
+                hdr: 0,
+            };
 
-let gl, program, uniforms = {}, texture;
-const VS = `#version 300 es
-in vec2 aPos;
-in vec2 aTex;
-out vec2 vTex;
-void main(){
-    vTex = vec2(aTex.x, 1.0 - aTex.y);
-    gl_Position = vec4(aPos, 0.0, 1.0);
-}`;
+            const sliders = [brightnessSlider, contrastSlider, saturateSlider, sharpenSlider, hdrSlider];
 
-const FS = `#version 300 es
-precision highp float;
-in vec2 vTex;
-out vec4 outColor;
-uniform sampler2D uTex;
-uniform vec2 uTexSize;
-uniform float uSharpen, uContrast, uSaturation, uBrightness, uDenoise;
-uniform int uMovie;
-float luma(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
-vec3 rgb2hsv(vec3 c){ vec4 K=vec4(0.,-0.3333333,0.6666667,-1.); vec4 p=mix(vec4(c.bg,K.wz),vec4(c.gb,K.xy),step(c.b,c.g)); vec4 q=mix(vec4(p.xyw,c.r),vec4(c.r,p.yzx),step(p.x,c.r)); float d=q.x-min(q.w,q.y); float e=1.0e-10; return vec3(abs(q.z+(q.w-q.y)/(6.0*d+e)),d/(q.x+e),q.x); }
-vec3 hsv2rgb(vec3 c){ vec3 rgb=clamp(abs(mod(c.x*6.0+vec3(0.,4.,2.),6.)-3.)-1.,0.,1.); return c.z*mix(vec3(1.),rgb,c.y); }
-void main(){
-    vec2 px = 1.0 / uTexSize;
-    vec4 col = texture(uTex, vTex);
-    if(uDenoise > 0.001){
-        vec4 sum = vec4(0.0);
-        for(int y = -1; y <= 1; y++){
-            for(int x = -1; x <= 1; x++){
-                sum += texture(uTex, vTex + vec2(float(x), float(y)) * px);
+            imageUpload.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        imagePreview.src = e.target.result;
+                        imagePreview.style.display = 'block';
+                        placeholderText.style.display = 'none';
+                        downloadButton.disabled = false;
+                        resetAllControls();
+                        applyFilters();
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            function getFilterString() {
+                if (!imagePreview.src) return 'none';
+
+                const brightness = brightnessSlider.value;
+                const contrast = contrastSlider.value;
+                const saturate = saturateSlider.value;
+                const sharpen = sharpenSlider.value;
+                const hdrEffect = parseInt(hdrSlider.value);
+                
+                let hzBonusContrast = 0;
+                let hzBonusSaturate = 0;
+                switch(hzSelector.value) {
+                    case '90':
+                        hzBonusContrast = 5;
+                        hzBonusSaturate = 10;
+                        break;
+                    case '120':
+                        hzBonusContrast = 10;
+                        hzBonusSaturate = 15;
+                        break;
+                    case '144':
+                        hzBonusContrast = 15;
+                        hzBonusSaturate = 20;
+                        break;
+                }
+
+                const finalContrast = parseInt(contrast) + hdrEffect + hzBonusContrast;
+                const finalSaturate = parseInt(saturate) + (hdrEffect / 2) + hzBonusSaturate;
+
+                return `brightness(${brightness}%) contrast(${finalContrast}%) saturate(${finalSaturate}%) blur(${sharpen}px)`;
             }
-        }
-        col = mix(col, sum / 9.0, uDenoise);
-    }
-    if(uSharpen > 0.001){
-        vec4 b = (texture(uTex, vTex - px) + texture(uTex, vTex + px) + texture(uTex, vTex - vec2(px.y, px.x)) + texture(uTex, vTex + vec2(px.y, px.x))) / 4.0;
-        col += (col - b) * uSharpen;
-    }
-    vec3 c = col.rgb;
-    c = pow(c, vec3(1.0 / 2.2));
-    c *= uBrightness;
-    c = ((c - 0.5) * uContrast) + 0.5;
-    vec3 h = rgb2hsv(c);
-    h.y *= uSaturation;
-    c = hsv2rgb(h);
-    if(uMovie > 0){
-        if(uMovie==1){ vec3 o=vec3(1.,.5,.2),t=vec3(.0,.4,.7); float L=luma(c); c=mix(c,o,clamp(L*1.5-0.3,0.0,0.8)); c=mix(c,t,clamp(1.0-L*1.8,0.0,0.6)); }
-        else if(uMovie==2){ c=vec3(dot(c,vec3(.393,.769,.189)),dot(c,vec3(.349,.686,.168)),dot(c,vec3(.272,.534,.131))); }
-        else if(uMovie==3){ float g=luma(c); c=vec3(g); c=((c-0.4)*1.8)+0.4; }
-        else if(uMovie==4){ c=pow(c,vec3(.8)); c.g *= 1.1; c.b *= 1.2; }
-        else if(uMovie==5){ vec3 hh=rgb2hsv(c); hh.y*=1.7; c=hsv2rgb(hh); c.r *= 1.2; c.b *= 0.8; }
-    }
-    c = pow(c, vec3(2.2));
-    outColor = vec4(clamp(c, 0., 1.), 1.);
-}`;
 
-function glInit(){
-    gl = el.cine.getContext('webgl2', { antialias: true, desynchronized: true, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
-    if(!gl){ alert('ERROR CRÍTICO: WebGL2 no soportado. No se puede iniciar Singularity Engine.'); return; }
-    const vs=gl.createShader(gl.VERTEX_SHADER); gl.shaderSource(vs,VS); gl.compileShader(vs);
-    const fs=gl.createShader(gl.FRAGMENT_SHADER); gl.shaderSource(fs,FS); gl.compileShader(fs);
-    program = gl.createProgram(); gl.attachShader(program,vs); gl.attachShader(program,fs); gl.linkProgram(program); gl.useProgram(program);
-    const quad=new Float32Array([-1,-1,0,0, 1,-1,1,0, -1,1,0,1, 1,1,1,1]);
-    const buf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,buf); gl.bufferData(gl.ARRAY_BUFFER,quad,gl.STATIC_DRAW);
-    const aPos=gl.getAttribLocation(program,'aPos'), aTex=gl.getAttribLocation(program,'aTex');
-    gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,16,0);
-    gl.enableVertexAttribArray(aTex); gl.vertexAttribPointer(aTex,2,gl.FLOAT,false,16,8);
-    texture=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,texture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    uniforms={
-        uTex:gl.getUniformLocation(program,'uTex'), uTexSize:gl.getUniformLocation(program,'uTexSize'),
-        uSharpen:gl.getUniformLocation(program,'uSharpen'), uContrast:gl.getUniformLocation(program,'uContrast'),
-        uSaturation:gl.getUniformLocation(program,'uSaturation'), uBrightness:gl.getUniformLocation(program,'uBrightness'),
-        uDenoise:gl.getUniformLocation(program,'uDenoise'), uMovie:gl.getUniformLocation(program,'uMovie')
-    };
-}
+            function applyFilters() {
+                const filterString = getFilterString();
+                imagePreview.style.filter = filterString;
 
-function resizeCanvas(){
-    const dpr = window.devicePixelRatio || 1;
-    const r = el.cine.getBoundingClientRect();
-    el.cine.width = Math.round(r.width * dpr);
-    el.cine.height = Math.round(r.height * dpr);
-    if(gl) gl.viewport(0, 0, el.cine.width, el.cine.height);
-}
-
-function updateTexture(){
-    if(!gl || v.readyState < v.HAVE_METADATA) return;
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, v); }
-    catch(e) { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, v.videoWidth, v.videoHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null); gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, v); }
-    gl.uniform1i(uniforms.uTex, 0);
-    gl.uniform2f(uniforms.uTexSize, v.videoWidth || 1, v.videoHeight || 1);
-    gl.uniform1f(uniforms.uSharpen, +el.sharpen.value / 100.0 * 2.0);
-    gl.uniform1f(uniforms.uContrast, +el.contrast.value / 100.0);
-    gl.uniform1f(uniforms.uSaturation, +el.saturation.value / 100.0);
-    gl.uniform1f(uniforms.uBrightness, +el.brightness.value / 100.0);
-    gl.uniform1f(uniforms.uDenoise, +el.denoise.value / 100.0 * 0.6);
-    gl.uniform1i(uniforms.uMovie, +el.movieFilter.value);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    gl.flush();
-}
-
-function fmtTime(s){
-    if(!isFinite(s)) return '0:00.00';
-    const min=Math.floor(s/60);
-    const sec=Math.floor(s%60).toString().padStart(2,'0');
-    const ms=Math.floor((s%1)*100).toString().padStart(2,'0');
-    return `${min}:${sec}.${ms}`;
-}
-
-let rafId = 0;
-function startPreview() {
-    stopPreview();
-    function tick() {
-        if (v.paused) return;
-        updateTexture();
-        if(!el.seek.matches(':active')){
-            el.seek.value = v.currentTime;
-            el.tCur.textContent = fmtTime(v.currentTime);
-        }
-        rafId = requestAnimationFrame(tick);
-    }
-    rafId = requestAnimationFrame(tick);
-}
-function stopPreview() { if(rafId) cancelAnimationFrame(rafId); rafId=0; }
-
-el.file.addEventListener('change', () => {
-    const f = el.file.files[0]; if(!f) return;
-    const url = URL.createObjectURL(f);
-    v.src = url; v.load();
-    el.status.textContent = 'Cargando activo...';
-    v.onloadedmetadata = () => {
-        resizeCanvas();
-        if(!gl) glInit();
-        el.seek.max = v.duration || 0;
-        el.tDur.textContent = fmtTime(v.duration || 0);
-        el.status.textContent = 'Activo cargado. Listo para iniciar flujo.';
-        v.currentTime = 0;
-        setTimeout(() => { updateTexture(); el.tCur.textContent = fmtTime(0); }, 100);
-    };
-    v.onerror = () => { el.status.textContent = 'Error: No se pudo cargar el activo.'; };
-});
-
-['sharpen', 'contrast', 'saturation', 'brightness', 'denoise'].forEach(id => {
-    const slider = $(id);
-    const display = $(`${id}Value`);
-    slider.addEventListener('input', () => {
-        display.textContent = slider.value;
-        if(v.paused) updateTexture();
-    });
-});
-el.movieFilter.addEventListener('change', () => { if(v.paused) updateTexture(); });
-
-el.play.addEventListener('click', () => { if(v.readyState >= 2){ v.play(); startPreview(); } });
-el.pause.addEventListener('click', () => { v.pause(); stopPreview(); updateTexture(); });
-el.seek.addEventListener('input', () => { el.tCur.textContent = fmtTime(+el.seek.value); });
-el.seek.addEventListener('change', () => { v.currentTime = +el.seek.value; if(v.paused) updateTexture(); });
-window.addEventListener('resize', () => { resizeCanvas(); if(v.paused) updateTexture(); });
-window.addEventListener('keydown', e => { if(e.code === 'Space' && !['INPUT','SELECT','TEXTAREA','BUTTON'].includes(document.activeElement.tagName)){ e.preventDefault(); if(v.paused) el.play.click(); else el.pause.click(); } });
-
-let rec, recChunks = [], recMime = '', recUrl = '';
-function pickMime(){
-    if(el.fmt.value === 'mp4'){ const m = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"'; return MediaRecorder.isTypeSupported(m)?m:''; }
-    if(el.fmt.value === 'webm'){ const m = 'video/webm;codecs=vp9,opus'; if(MediaRecorder.isTypeSupported(m)) return m; const m2='video/webm;codecs=vp8,opus'; if(MediaRecorder.isTypeSupported(m2)) return m2; return ''; }
-    const candidates = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"'];
-    return candidates.find(m => MediaRecorder.isTypeSupported(m)) || '';
-}
-function calcOutWH(){ const [w, h] = el.outRes.value.split('x').map(n => parseInt(n, 10)); return {w, h}; }
-
-let cancelRenderFlag = false, stopRenderFlag = false;
-
-async function startRecording(){
-    if(v.readyState < 2){ alert('Cargue un activo de vídeo primero.'); return; }
-    if(rec && rec.state === "recording"){ alert('Render en progreso.'); return; }
-
-    v.pause(); stopPreview();
-    cancelRenderFlag = false; stopRenderFlag = false;
-
-    el.startRec.style.display = 'none';
-    el.recRow.style.display = 'flex';
-    el.prog.style.display = 'block';
-    el.dl.style.display = 'none';
-    el.prog.value = 0;
-    el.status.textContent = 'Inicializando motor de render...';
-  
-    const { w, h } = calcOutWH();
-    const fps = Math.max(24, +el.outFps.value || 60);
-    const present = document.createElement('canvas');
-    present.width = w; present.height = h;
-    const pctx = present.getContext('2d', { alpha: false });
-    pctx.imageSmoothingEnabled = true;
-    pctx.imageSmoothingQuality = el.scaleRender.value === 'bicubic' ? 'high' : 'medium';
-    
-    const streamCanvas = present.captureStream(fps);
-    let audioContext, audioSource, audioDestination;
-    try {
-        const audioCtx = new AudioContext();
-        const sourceNode = audioCtx.createMediaElementSource(v);
-        audioDestination = audioCtx.createMediaStreamDestination();
-        sourceNode.connect(audioDestination);
-        sourceNode.connect(audioCtx.destination);
-        const audioTracks = audioDestination.stream.getAudioTracks();
-        if(audioTracks.length > 0) streamCanvas.addTrack(audioTracks[0]);
-    } catch(e) {
-        console.warn("No se pudo procesar el audio.", e);
-    }
-    const mime = pickMime();
-    if(!mime){ alert('MediaRecorder no soportado.'); el.startRec.style.display = 'block'; el.recRow.style.display = 'none'; el.prog.style.display = 'none'; return; }
-    recMime = mime;
-
-    const pixels = w * h;
-    let videoBitsPerSecond;
-    if (pixels <= 1280 * 720) videoBitsPerSecond = 8_000_000;
-    else if (pixels <= 1920 * 1080) videoBitsPerSecond = 15_000_000;
-    else if (pixels <= 3840 * 2160) videoBitsPerSecond = 50_000_000;
-    else videoBitsPerSecond = 150_000_000;
-
-    try { rec = new MediaRecorder(streamCanvas, { mimeType: mime, videoBitsPerSecond, audioBitsPerSecond: 320_000 }); }
-    catch(err) { alert('Error al iniciar grabador: ' + err.message); el.startRec.style.display = 'block'; el.recRow.style.display = 'none'; el.prog.style.display = 'none'; return; }
-
-    recChunks.length = 0;
-    rec.ondataavailable = ev => { if(ev.data && ev.data.size) recChunks.push(ev.data); };
-    rec.onstop = () => {
-        if(cancelRenderFlag) { recChunks.length = 0; return; }
-        const blob = new Blob(recChunks, {type: recMime});
-        if(recUrl) URL.revokeObjectURL(recUrl);
-        recUrl = URL.createObjectURL(blob);
-        el.dl.href = recUrl;
-        const ext = recMime.includes('mp4') ? 'mp4' : 'webm';
-        el.dl.download = `GFlux-Singularity-Export_${Date.now()}.${ext}`;
-        el.dl.style.display = 'block';
-        el.status.textContent = 'Render completo. Activo listo para descarga.';
-        el.recRow.style.display = 'none';
-        el.startRec.style.display = 'block';
-        el.prog.style.display = 'none';
-    };
-  
-    el.stopRec.onclick = () => { stopRenderFlag = true; };
-    el.cancelRec.onclick = () => { cancelRenderFlag = true; };
-
-    rec.start();
-    v.currentTime = 0;
-    v.muted = true;
-    v.play();
-
-    const duration = v.duration;
-    
-    function renderLoop(timestamp) {
-        if(cancelRenderFlag || stopRenderFlag || v.currentTime >= duration){
-            if (rec && rec.state === "recording") rec.stop();
-            v.pause(); v.currentTime = 0; v.muted = false;
-            if (cancelRenderFlag) {
-                el.status.textContent = 'Render cancelado.';
-                el.recRow.style.display = 'none';
-                el.startRec.style.display = 'block';
-                el.prog.style.display = 'none';
+                brightnessValue.textContent = `${brightnessSlider.value}%`;
+                contrastValue.textContent = `${contrastSlider.value}%`;
+                saturateValue.textContent = `${saturateSlider.value}%`;
+                sharpenValue.textContent = `${sharpenSlider.value}px`;
+                hdrValue.textContent = `${hdrSlider.value}%`;
             }
-            return;
-        }
 
-        updateTexture();
-        pctx.clearRect(0, 0, w, h);
-        pctx.drawImage(el.cine, 0, 0, w, h);
-        
-        const p = Math.round((v.currentTime / duration) * 100);
-        el.prog.value = p;
-        el.status.textContent = `Renderizando... ${p}%`;
-        
-        requestAnimationFrame(renderLoop);
-    }
-    requestAnimationFrame(renderLoop);
-}
+            presetFilters.addEventListener('change', () => {
+                const selectedPreset = presetFilters.value;
+                resetSliderValues();
 
-el.startRec.addEventListener('click', startRecording);
-resizeCanvas();
-glInit();
-</script>
+                switch (selectedPreset) {
+                    case 'vivid':
+                        brightnessSlider.value = 115;
+                        contrastSlider.value = 120;
+                        saturateSlider.value = 165;
+                        break;
+                    case 'movie':
+                        brightnessSlider.value = 95;
+                        contrastSlider.value = 125;
+                        saturateSlider.value = 110;
+                        break;
+                    case 'dynamic':
+                        brightnessSlider.value = 105;
+                        contrastSlider.value = 130;
+                        saturateSlider.value = 125;
+                        break;
+                }
+                applyFilters();
+            });
+            
+            sliders.forEach(slider => slider.addEventListener('input', applyFilters));
+            hzSelector.addEventListener('change', applyFilters);
+            
+            function resetSliderValues() {
+                brightnessSlider.value = initialValues.brightness;
+                contrastSlider.value = initialValues.contrast;
+                saturateSlider.value = initialValues.saturate;
+                sharpenSlider.value = initialValues.sharpen;
+                hdrSlider.value = initialValues.hdr;
+            }
+
+            function resetAllControls() {
+                resetSliderValues();
+                presetFilters.value = 'none';
+                hzSelector.value = '60';
+            }
+
+            resetButton.addEventListener('click', () => {
+                if (!imagePreview.src) return;
+                resetAllControls();
+                applyFilters();
+            });
+            
+            // --- NUEVA LÓGICA DE DESCARGA ---
+            downloadButton.addEventListener('click', () => {
+                if (!imagePreview.src || downloadButton.disabled) return;
+
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                // Asegurar que la imagen cargue completamente antes de dibujarla
+                img.onload = () => {
+                    // Establecer las dimensiones del canvas igual a las de la imagen original
+                    canvas.width = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+
+                    // Aplicar los filtros CSS al contexto del canvas
+                    ctx.filter = getFilterString();
+
+                    // Dibujar la imagen en el canvas. Los filtros se aplicarán en este paso.
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    // Crear el enlace de descarga
+                    const link = document.createElement('a');
+                    link.download = 'imagen-mejorada.png';
+                    link.href = canvas.toDataURL('image/png'); // Obtener la URL de datos del canvas con los filtros
+                    
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                };
+
+                // Establecer el src de la nueva imagen para que se cargue.
+                // Es importante hacer esto después de definir el .onload
+                img.src = imagePreview.src;
+            });
+
+            // Aplicar filtros iniciales (default) al cargar
+            applyFilters();
+        });
+    </script>
 </body>
-                              </html>
+  </html>
